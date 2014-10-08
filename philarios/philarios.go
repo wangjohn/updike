@@ -17,7 +17,7 @@ func (t WordVectorCollection) Len() int {
 }
 
 func (t WordVectorCollection) Less(i, j int) bool {
-  return t[i].Score < t[j].Score
+  return synonymScore(t[i].Score) < synonymScore(t[j].Score)
 }
 
 func (t WordVectorCollection) Swap(i, j int) {
@@ -25,8 +25,11 @@ func (t WordVectorCollection) Swap(i, j int) {
 }
 
 /*
-This method returns alternative words that can be used in place of the current
-target in the target phrase.
+AlternativeWords returns alternative words that can be used in place of the
+current word. The words that are returned will have close meanings to the word
+used as an argument, but which are usually used in place of that word.
+
+The maxWords parameter specifies the maximum number of words to return.
 */
 func AlternativeWords(word string, maxWords int) ([]string, error) {
   var alternativeWords []string
@@ -64,7 +67,12 @@ func AlternativeWords(word string, maxWords int) ([]string, error) {
   return alternativeWords
 }
 
-func SynonymScore(score float64) (float64) {
+/*
+The synonymScore method specifies the mapping between a word's score and its
+rank relative to other words. This function allows finer control over the words
+that are returned.
+*/
+func synonymScore(score float64) (float64) {
   return score
 }
 
