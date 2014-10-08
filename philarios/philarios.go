@@ -2,6 +2,7 @@ package philarios
 
 import (
   "database/sql"
+  "regexp"
   "github.com/wangjohn/quickselect"
 )
 
@@ -80,6 +81,43 @@ func TargetVectors(word string) ([]WordVector, error) {
   var wordVectors []WordVector
 
   // TODO: figure out a way to get pre and post target vectors
+  rows, err := db.Query(`SELECT body FROM paragraphs
+                         WHERE to_tsvector(body) @@ to_tsquery(?)`, word)
+  if err != nil {
+    return wordVectors, err
+  }
+  defer rows.Close()
+
+  for rows.Next() {
+    var body string
+    if err = rows.Scan(&body); err != nil {
+      return wordVectors, err
+    }
+
+    newVectors := paragraphTargetVectors(body, word)
+    wordVectors = append(wordVectors, newVectors...)
+  }
+
+  return wordVectors
+}
+
+func paragraphTargetVectors(paragraph, word string) ([]WordVector) {
+  regexString := fmt.Printf(`[\s[[:punct:]]]*%s[\s[[:punct:]]]*`, word)
+  compiledRegex := regexp.Compile(regexString)
+
+  allIndices := compiledRegex.FindAllStringIndex(paragraph, -1)
+  if allIndices != nil {
+    for i := 0; i < len(allIndices); i++ {
+      matchedIndexPair := allIndices[i]
+      start, end := matchedIndexPair[0], matchedIndexPair[1]
+      lookForWord(paragraph[:start], false)
+      lookForword(paragraph[end:], true)
+    }
+  }
+}
+
+func lookForWord(paragraph string, atBeginning bool) string {
+  // TODO: implement
 }
 
 func Synonyms(word string) ([]string, error) {
