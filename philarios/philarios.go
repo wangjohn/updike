@@ -102,22 +102,45 @@ func TargetVectors(word string) ([]WordVector, error) {
 }
 
 func paragraphTargetVectors(paragraph, word string) ([]WordVector) {
+  wordVectors := make([]WordVector, 0)
+
   regexString := fmt.Printf(`[\s[[:punct:]]]*%s[\s[[:punct:]]]*`, word)
   compiledRegex := regexp.Compile(regexString)
 
   allIndices := compiledRegex.FindAllStringIndex(paragraph, -1)
+  var potentialVector string
   if allIndices != nil {
     for i := 0; i < len(allIndices); i++ {
       matchedIndexPair := allIndices[i]
       start, end := matchedIndexPair[0], matchedIndexPair[1]
-      lookForWord(paragraph[:start], false)
-      lookForword(paragraph[end:], true)
+
+      potentialVector = lookForWord(paragraph[:start], false)
+      if potentialVector != "" {
+        wordVectors = append(wordVectors, potentialVector)
+      }
+
+      potentialVector := lookForword(paragraph[end:], true)
+      if potentialVector != "" {
+        wordVectors = append(wordVectors, potentialVector)
+      }
     }
   }
+
+  return wordVectors
 }
 
 func lookForWord(paragraph string, atBeginning bool) string {
-  // TODO: implement
+  if strings.Trim(paragraph, " ") == "" {
+    return ""
+  }
+
+  var compiledRegex regexp.Regexp
+  if atBeginning {
+    compiledRegex = regexp.Compile(`^(\w+)[\s[[:punct:]]]?`)
+  } else {
+    compiledRegex = regexp.Compile(`[\s[[:punct:]]]?(\w+)$`)
+  }
+  return compiledRegex.FindString(paragraph)
 }
 
 func Synonyms(word string) ([]string, error) {
