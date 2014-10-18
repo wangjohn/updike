@@ -3,6 +3,9 @@ package philarios
 import (
   "regexp"
   "github.com/wangjohn/quickselect"
+
+  "fmt"
+  "strings"
 )
 
 type WordVector struct {
@@ -91,55 +94,79 @@ func TargetVectors(word string) ([]WordVector, error) {
       return wordVectors, err
     }
 
-    newVectors := paragraphTargetVectors(body, word)
+    newVectors, err := paragraphTargetVectors(body, word)
+    if err != nil {
+      return wordVectors, err
+    }
     wordVectors = append(wordVectors, newVectors...)
   }
 
-  return wordVectors
+  return wordVectors, nil
 }
 
-func paragraphTargetVectors(paragraph, word string) ([]WordVector) {
+func paragraphTargetVectors(paragraph, word string) ([]WordVector, error) {
   wordVectors := make([]WordVector, 0)
 
-  regexString := fmt.Printf(`[\s[[:punct:]]]*%s[\s[[:punct:]]]*`, word)
-  compiledRegex := regexp.Compile(regexString)
+  regexString := fmt.Sprintf(`[\s[[:punct:]]]*%s[\s[[:punct:]]]*`, word)
+  compiledRegex, err := regexp.Compile(regexString)
+  if err != nil {
+    return wordVectors, err
+  }
 
   allIndices := compiledRegex.FindAllStringIndex(paragraph, -1)
   var potentialVector string
+  var currentVector WordVector
+
   if allIndices != nil {
     for i := 0; i < len(allIndices); i++ {
       matchedIndexPair := allIndices[i]
       start, end := matchedIndexPair[0], matchedIndexPair[1]
 
-      potentialVector = lookForWord(paragraph[:start], false)
+      potentialVector, err = lookForWord(paragraph[:start], false)
+      if err != nil {
+        return wordVectors, err
+      }
       if potentialVector != "" {
-        wordVectors = append(wordVectors, potentialVector)
+        currentVector = WordVector{potentialVector, 1.0}
+        wordVectors = append(wordVectors, currentVector)
       }
 
-      potentialVector := lookForword(paragraph[end:], true)
+      potentialVector, err := lookForWord(paragraph[end:], true)
+      if err != nil {
+        return wordVectors, err
+      }
       if potentialVector != "" {
-        wordVectors = append(wordVectors, potentialVector)
+        currentVector = WordVector{potentialVector, 1.0}
+        wordVectors = append(wordVectors, currentVector)
       }
     }
   }
 
-  return wordVectors
+  return wordVectors, nil
 }
 
-func lookForWord(paragraph string, atBeginning bool) string {
+func lookForWord(paragraph string, atBeginning bool) (string, error) {
   if strings.Trim(paragraph, " ") == "" {
-    return ""
+    return "", nil
   }
 
   var compiledRegex regexp.Regexp
+  var err error
+
   if atBeginning {
-    compiledRegex = regexp.Compile(`^(\w+)[\s[[:punct:]]]?`)
+    compiledRegex, err = regexp.Compile(`^(\w+)[\s[[:punct:]]]?`)
   } else {
-    compiledRegex = regexp.Compile(`[\s[[:punct:]]]?(\w+)$`)
+    compiledRegex, err = regexp.Compile(`[\s[[:punct:]]]?(\w+)$`)
   }
-  return compiledRegex.FindString(paragraph)
+
+  if err != nil {
+    return "", err
+  }
+
+  return compiledRegex.FindString(paragraph), nil
 }
 
 func Synonyms(word string) ([]string, error) {
   // TODO: implement
+  return nil, nil
 }
