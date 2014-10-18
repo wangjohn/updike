@@ -1,7 +1,6 @@
 package philarios
 
 import (
-  "database/sql"
   "regexp"
   "github.com/wangjohn/quickselect"
 )
@@ -11,7 +10,7 @@ type WordVector struct {
   Score float64
 }
 
-type WordVectorCollection []WordVector struct
+type WordVectorCollection []WordVector
 
 func (t WordVectorCollection) Len() int {
   return len(t)
@@ -49,7 +48,7 @@ func AlternativeWords(word string, maxWords int) ([]string, error) {
 
   for _, synonym := range synonyms {
     synonymVectors, err := TargetVectors(synonym)
-    wordVectors = append(wordVectors, synonymVectors)
+    wordVectors = append(wordVectors, synonymVectors...)
   }
 
   var wordsToSelect int
@@ -65,7 +64,7 @@ func AlternativeWords(word string, maxWords int) ([]string, error) {
     alternativeWords[i] = wordVectors[i].Word
   }
 
-  return alternativeWords
+  return alternativeWords, nil
 }
 
 /*
@@ -80,9 +79,7 @@ func synonymScore(score float64) (float64) {
 func TargetVectors(word string) ([]WordVector, error) {
   var wordVectors []WordVector
 
-  // TODO: figure out a way to get pre and post target vectors
-  rows, err := db.Query(`SELECT body FROM paragraphs
-                         WHERE to_tsvector(body) @@ to_tsquery(?)`, word)
+  rows, err := QueryForWord(word)
   if err != nil {
     return wordVectors, err
   }
