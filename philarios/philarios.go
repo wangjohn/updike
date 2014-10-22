@@ -35,6 +35,23 @@ used as an argument, but which are usually used in place of that word.
 The maxWords parameter specifies the maximum number of words to return.
 */
 func AlternativeWords(word string, maxWords int) ([]string, error) {
+  alternativeWords = make([]string, 0)
+  alternativeWordVectors, err := AlternativeWordVectors(word, maxWords)
+  if err != nil {
+    return alternativeWords, err
+  }
+
+  for _, wordVector := range alternativeWordVectors {
+    alternativeWords = append(alternativeWords, wordVector.word)
+  }
+
+  return alternativeWords, nil
+}
+
+/*
+AlternativeWordVectors returns alternative word vectors for a particular word.
+*/
+func AlternativeWordVectors(word string, maxWords int) ([]WordVector, error) {
   var alternativeWords []string
   wordVectors := make(WordVectorCollection, 0)
 
@@ -62,12 +79,7 @@ func AlternativeWords(word string, maxWords int) ([]string, error) {
   }
   quickselect.QuickSelect(wordVectors, wordsToSelect)
 
-  alternativeWords = make([]string, wordsToSelect)
-  for i := 0; i < wordsToSelect; i++ {
-    alternativeWords[i] = wordVectors[i].Word
-  }
-
-  return alternativeWords, nil
+  return wordVectors[wordsToSelect:], nil
 }
 
 /*
