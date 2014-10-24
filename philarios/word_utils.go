@@ -1,14 +1,13 @@
 package philarios
 
 import (
-  "regexp"
   "strings"
   "unicode"
 )
 
-func SplitWords(sentence string) ([]string, error) {
+func SplitWords(sentence string) ([]string) {
   f := func(c rune) bool {
-    return !unicode.isLetter(c) && !unicode.IsNumber(c)
+    return !unicode.IsLetter(c) && !unicode.IsNumber(c)
   }
   return strings.FieldsFunc(sentence)
 }
