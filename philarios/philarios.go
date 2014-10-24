@@ -194,20 +194,12 @@ func lookForWord(paragraph string, atBeginning bool) (string, error) {
     return "", nil
   }
 
-  var compiledRegex *regexp.Regexp
-  var err error
-
+  words := SplitWords(paragraph)
   if atBeginning {
-    compiledRegex, err = regexp.Compile(`^(\w+)[\s[[:punct:]]]?`)
+    return words[0], nil
   } else {
-    compiledRegex, err = regexp.Compile(`[\s[[:punct:]]]?(\w+)$`)
+    return words[len(words)-1], nil
   }
-
-  if err != nil {
-    return "", err
-  }
-
-  return compiledRegex.FindString(paragraph), nil
 }
 
 func Synonyms(word string) ([]string, error) {

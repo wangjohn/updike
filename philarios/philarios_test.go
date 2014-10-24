@@ -13,7 +13,7 @@ func TestForBeginningWordTargetVector(t *testing.T) {
     {"", ""},
     {"Tabitha", "Tabitha"},
     {"Nineteen. Ninety five.", "Nineteen"},
-    {"Chain-smokers.", "Chain-smokers"},
+    {"Chain-smokers.", "Chain"},
     {"--bad things happen", "bad"},
   }
 
