@@ -18,10 +18,10 @@ func TestForBeginningWordTargetVector(t *testing.T) {
   }
 
   for _, fixture := range fixtures {
-    resultingWord := lookForWord(fixture.paragraph, true)
+    resultingWord, _ := lookForWord(fixture.paragraph, true)
     if resultingWord != fixture.beginningVector {
       t.Errorf("Did not find the expected vector. Expected '%s' but received '%s'",
-        fixture.beginningVector, fixture.resultingWord)
+        fixture.beginningVector, resultingWord)
     }
   }
 }

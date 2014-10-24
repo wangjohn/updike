@@ -1,6 +1,7 @@
 package philarios
 
 import (
+  "reflect"
   "testing"
 )
 
@@ -17,7 +18,7 @@ func TestSplitWords(t *testing.T) {
 
   for _, fixture := range fixtures {
     words := SplitWords(fixture.sentence)
-    if words != fixture.expectedWords {
+    if !reflect.DeepEqual(words, fixture.expectedWords) {
       t.Errorf("Did not obtain the expected words. Expected %s but obtained %s",
         fixture.expectedWords, words)
     }

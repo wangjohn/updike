@@ -65,14 +65,14 @@ used as an argument, but which are usually used in place of that word.
 The maxWords parameter specifies the maximum number of words to return.
 */
 func AlternativeWords(word string, maxWords int) ([]string, error) {
-  alternativeWords = make([]string, 0)
+  alternativeWords := make([]string, 0)
   alternativeWordVectors, err := AlternativeWordVectors(word, maxWords)
   if err != nil {
     return alternativeWords, err
   }
 
   for _, wordVector := range alternativeWordVectors {
-    alternativeWords = append(alternativeWords, wordVector.word)
+    alternativeWords = append(alternativeWords, wordVector.Word)
   }
 
   return alternativeWords, nil
@@ -82,22 +82,24 @@ func AlternativeWords(word string, maxWords int) ([]string, error) {
 AlternativeWordVectors returns alternative word vectors for a particular word.
 */
 func AlternativeWordVectors(word string, maxWords int) ([]WordVector, error) {
-  var alternativeWords []string
   wordVectors := make(WordVectorCollection, 0)
 
   targetVectors, err := TargetVectors(word)
   if err != nil {
-    return alternativeWords, err
+    return wordVectors, err
   }
   wordVectors = append(wordVectors, targetVectors...)
 
   synonyms, err := Synonyms(word)
   if err != nil {
-    return alternativeWords, err
+    return wordVectors, err
   }
 
   for _, synonym := range synonyms {
     synonymVectors, err := TargetVectors(synonym)
+    if err != nil {
+      return wordVectors, err
+    }
     wordVectors = append(wordVectors, synonymVectors...)
   }
 
@@ -192,7 +194,7 @@ func lookForWord(paragraph string, atBeginning bool) (string, error) {
     return "", nil
   }
 
-  var compiledRegex regexp.Regexp
+  var compiledRegex *regexp.Regexp
   var err error
 
   if atBeginning {
