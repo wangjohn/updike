@@ -13,7 +13,7 @@ func TestLookForWords(t *testing.T) {
     expectedWords []string
   }{
     // Test looking for words at the beginning of a paragraph
-    {1, true, "My booty don't lie", []string{"My"}},
+    {1, true, "My booty dont lie", []string{"My"}},
     {1, true, "", []string{}},
     {1, true, "Tabitha", []string{"Tabitha"}},
     {1, true, "Nineteen. Ninety five.", []string{"Nineteen"}},
@@ -28,15 +28,15 @@ func TestLookForWords(t *testing.T) {
     {1, false, "staph-------", []string{"staph"}},
 
     // Test looking for multiple words at the beginning
-    {3, true, "My booty don't", []string{"My", "booty", "don't"}},
+    {3, true, "My booty dont", []string{"My", "booty", "dont"}},
     {5, true, "Just stop", []string{"Just", "stop"}},
     {0, true, "blah blah", []string{}},
     {3, true, "into...dusk?", []string{"into", "dusk"}},
 
     // Test looking for multiple words at the end
     {3, false, "Just stop your mouth", []string{"stop", "your", "mouth"}},
-    {4, false, "Battle of st. Crispin's day", []string{"of", "st", "Crispin's", "day"}},
-    {10, false, "don't move", []string{"don't", "move"}},
+    {4, false, "Battle of st. Crispins day", []string{"of", "st", "Crispins", "day"}},
+    {10, false, "dont move", []string{"dont", "move"}},
     {5, false, "hahah/you/url", []string{"hahah", "you", "url"}},
   }
 
