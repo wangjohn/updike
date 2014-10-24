@@ -8,6 +8,10 @@ import (
   "strings"
 )
 
+const (
+  NumSurroundingWords = 2
+)
+
 type WordVector struct {
   Word string
   Score float64
@@ -158,7 +162,7 @@ func paragraphTargetVectors(paragraph, word string) ([]WordVector, error) {
   }
 
   allIndices := compiledRegex.FindAllStringIndex(paragraph, -1)
-  var potentialVector string
+  var potentialWords []string
   var currentVector WordVector
 
   if allIndices != nil {
@@ -166,22 +170,20 @@ func paragraphTargetVectors(paragraph, word string) ([]WordVector, error) {
       matchedIndexPair := allIndices[i]
       start, end := matchedIndexPair[0], matchedIndexPair[1]
 
-      potentialVector, err = lookForWord(paragraph[:start], false)
-      if err != nil {
-        return wordVectors, err
-      }
-      if potentialVector != "" {
-        currentVector = WordVector{potentialVector, 1.0}
-        wordVectors = append(wordVectors, currentVector)
+      potentialWords = lookForWords(paragraph[:start], NumSurroundingWords, false)
+      if len(potentialWords) > 0 {
+        for _, word := range potentialWords {
+          currentVector = WordVector{word, 1.0}
+          wordVectors = append(wordVectors, currentVector)
+        }
       }
 
-      potentialVector, err := lookForWord(paragraph[end:], true)
-      if err != nil {
-        return wordVectors, err
-      }
-      if potentialVector != "" {
-        currentVector = WordVector{potentialVector, 1.0}
-        wordVectors = append(wordVectors, currentVector)
+      potentialWords = lookForWords(paragraph[end:], NumSurroundingWords, true)
+      if len(potentialWords) > 0 {
+        for _, word := range potentialWords {
+          currentVector = WordVector{word, 1.0}
+          wordVectors = append(wordVectors, currentVector)
+        }
       }
     }
   }
@@ -189,16 +191,23 @@ func paragraphTargetVectors(paragraph, word string) ([]WordVector, error) {
   return wordVectors, nil
 }
 
-func lookForWord(paragraph string, atBeginning bool) (string, error) {
+func lookForWords(paragraph string, wordsToCapture int, atBeginning bool) ([]string) {
   if strings.Trim(paragraph, " ") == "" {
-    return "", nil
+    return []string{}
   }
 
   words := SplitWords(paragraph)
-  if atBeginning {
-    return words[0], nil
+  var index int
+  if len(words) > wordsToCapture {
+    index = wordsToCapture
   } else {
-    return words[len(words)-1], nil
+    index = len(words)
+  }
+
+  if atBeginning {
+    return words[:index]
+  } else {
+    return words[(len(words)-index):]
   }
 }
 
