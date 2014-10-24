@@ -28,6 +28,36 @@ func (t WordVectorCollection) Swap(i, j int) {
 }
 
 /*
+SentenceFindAlternativeWords takes a sentence and the start and end positions
+of a query, and finds alternative words for that query. The queryStart index
+should be the first byte of the query word, while the queryEnd index should be
+the index of the first byte after the query word.
+*/
+func SentenceFindAlternativeWords(sentence string, queryStart, queryEnd, maxWords int) ([]string, error) {
+  beforeString := sentence[:queryStart]
+  afterString := sentence[queryEnd:]
+  queryWord := sentence[queryStart:queryEnd]
+
+  beforeWords := SplitWords(beforeString)
+  afterWords := SplitWords(afterString)
+
+  return FindAlternativeWords(beforeWords, afterWords, queryWord, maxWords)
+}
+
+/*
+FindAlternativeWords takes a sentence and replaces the queryWord with a set of
+words (not exceeding maxWords), which may be a good fit given the context. The
+words before the queryWord in the sentence are given by beforeWords, and the
+words after are given by afterWords.
+*/
+func FindAlternativeWords(beforeWords, afterWords []string, queryWord string, maxWords int) ([]string, error) {
+  alternativeWords := make([]string, 0)
+
+  // TODO: implement me
+  return alternativeWords, nil
+}
+
+/*
 AlternativeWords returns alternative words that can be used in place of the
 current word. The words that are returned will have close meanings to the word
 used as an argument, but which are usually used in place of that word.
