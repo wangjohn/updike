@@ -3,12 +3,28 @@ package philarios
 import (
   "github.com/lib/pq"
   "database/sql"
+  "time"
 )
 
 const (
   DatabaseDriverName = "postgres"
   DatabaseDataSourceName = "user=philarios dbnamephilarios sslmode=verify-full"
 )
+
+type Publication struct {
+  Title string
+  Author string
+  Editor string
+  Date time.Time
+  SourceURL string
+  Encoding string
+  Text string
+  Categories []Category
+}
+
+type Category struct {
+  Name string
+}
 
 /*
 QueryForWord returns SQL rows of paragraphs containing the query word given as
@@ -38,7 +54,7 @@ func performWordQuery(word string, db *sql.DB) (*sql.Rows, error) {
     WHERE to_tsvector(body) @@ to_tsquery(?)`, word)
 }
 
-func AddBookData(book Book) (error) {
+func AddPublication(publication Publication) (error) {
   db, err := sql.Open(DatabaseDriverName, DatabaseDataSourceName)
   if err != nil {
     return err
@@ -49,25 +65,25 @@ func AddBookData(book Book) (error) {
     return err
   }
 
-  bookStmt, err := txn.Prepare(pq.CopyIn("books", "title", "author", "date"))
-  bookResult, err = bookStmt.Exec(book.Title, book.Author, book.Date)
+  publicationStmt, err := txn.Prepare(pq.CopyIn("publications", "title", "author", "date"))
+  publicationResult, err = publicationStmt.Exec(publication.Title, publication.Author, publication.Date)
   if err != nil {
     return err
   }
-  bookId := bookResult.LastInsertId()
+  publicationId := publicationResult.LastInsertId()
 
-  paragraphStmt, err := txn.Prepare(pq.CopyIn("paragraphs", "book", "body"))
-  paragraphs := strings.Split(book.Text, "\n")
+  paragraphStmt, err := txn.Prepare(pq.CopyIn("paragraphs", "publication", "body"))
+  paragraphs := strings.Split(publication.Text, "\n")
   for _, paragraph := range paragraphs {
-    _, err = paragraphStmt.Exec(bookId, paragraph)
+    _, err = paragraphStmt.Exec(publicationId, paragraph)
     if err != nil {
       return err
     }
   }
 
-  categoryStmt, err := txn.Prepare(pq.CopyIn("categories", "book", "category"))
-  for _, category := range categories {
-    _, err = categoryStmt.Exec(bookId, category)
+  categoryStmt, err := txn.Prepare(pq.CopyIn("categories", "publication", "category"))
+  for _, category := range publication.Categories {
+    _, err = categoryStmt.Exec(publicationId, category.Name)
     if err != nil {
       return err
     }
