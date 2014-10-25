@@ -12,6 +12,17 @@ const (
   DatabaseDataSourceName = "user=philarios dbnamephilarios sslmode=verify-full"
 )
 
+type PhilariosDatabase interface {
+  QueryForWord(word string, categories []string) (*sql.Rows, error)
+  AddPublication(publication Publication) (error)
+  EnsureSchema(db *sql.DB) (error)
+}
+
+type PhilariosPostgresDatabase struct {
+  DriverName string
+  DataSourceName string
+}
+
 var philariosSchema = `
 CREATE TABLE IF NOT EXISTS publications (
   id integer PRIMARY KEY,
@@ -49,22 +60,15 @@ type Publication struct {
   Encoding string
   Type string
   Text string
-  Categories []Category
-}
-
-/*
-Category is a stuct which represents a category type for a publication.
-*/
-type Category struct {
-  Name string
+  Categories []string
 }
 
 /*
 QueryForWord returns SQL rows of paragraphs containing the query word given as
 an argument. These are returned from the database.
 */
-func QueryForWord(word string) (*sql.Rows, error) {
-  db, err := sql.Open(DatabaseDriverName, DatabaseDataSourceName)
+func (p PhilariosPostgresDatabase) QueryForWord(word string) (*sql.Rows, error) {
+  db, err := sql.Open(p.DriverName, p.DataSourceName)
   if err != nil {
     return nil, err
   }
@@ -91,12 +95,12 @@ func performWordQuery(word string, db *sql.DB) (*sql.Rows, error) {
 AddPublication adds a new publication to the database, adding data to the
 publications, categories, and paragraphs tables.
 */
-func AddPublication(publication Publication) (error) {
-  db, err := sql.Open(DatabaseDriverName, DatabaseDataSourceName)
+func (p PhilariosPostgresDatabase) AddPublication(publication Publication) (error) {
+  db, err := sql.Open(p.DriverName, p.DataSourceName)
   if err != nil {
     return err
   }
-  ensureSchema(db)
+  p.EnsureSchema(db)
 
   txn, err := db.Begin()
   if err != nil {
@@ -123,7 +127,7 @@ func AddPublication(publication Publication) (error) {
 
   categoryStmt, err := txn.Prepare(pq.CopyIn("categories", "publication", "category"))
   for _, category := range publication.Categories {
-    _, err = categoryStmt.Exec(publicationId, category.Name)
+    _, err = categoryStmt.Exec(publicationId, category)
     if err != nil {
       return err
     }
@@ -154,7 +158,7 @@ func AddPublication(publication Publication) (error) {
   return nil
 }
 
-func ensureSchema(db *sql.DB) (error) {
+func (p PhilariosPostgresDatabase) EnsureSchema(db *sql.DB) (error) {
   _, err := db.Exec(philariosSchema)
   return err
 }
