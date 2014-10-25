@@ -1,18 +1,33 @@
 package philarios
 
 import (
+  "database/sql"
   "testing"
-  "fmt"
 )
 
 const (
   testDriverName = "postgres"
-  testDataSourceName = "user=philarios dbname=philarios sslmode=verify-full"
+  testDataSourceName = "host=localhost user=philarios dbname=philarios sslmode=disable"
 )
 
-func TestCreatingAndQueryingPostgresDatabaseWithoutCategories(t *testing.T) {
+func setupDatabase() (PhilariosPostgresDatabase, error) {
   philariosDatabase := PhilariosPostgresDatabase{
     testDriverName, testDataSourceName}
+
+  db, err := sql.Open(testDriverName, testDataSourceName)
+  if err != nil {
+    return philariosDatabase, err
+  }
+  defer db.Close()
+
+  _, err = db.Exec(`
+    DROP TABLE IF EXISTS paragraphs;
+    DROP TABLE IF EXISTS categories;
+    DROP TABLE IF EXISTS publications;
+  `)
+  if err != nil {
+    return philariosDatabase, err
+  }
 
   publication := Publication{
     Title: "Great Expectations",
@@ -37,9 +52,18 @@ A fearful man, all in coarse gray, with a great iron on his leg. A man with no h
 `,
   }
 
-  err := philariosDatabase.AddPublication(publication)
+  err = philariosDatabase.AddPublication(publication)
   if err != nil {
-    t.Errorf("Shouldn't have thrown an error when adding publication: %s", err.Error())
+    return philariosDatabase, err
+  }
+
+  return philariosDatabase, nil
+}
+
+func TestCreatingAndQueryingPostgresDatabaseWithoutCategories(t *testing.T) {
+  philariosDatabase, err := setupDatabase()
+  if err != nil {
+    t.Errorf("Error setting up database and seeding with data: %s", err.Error())
   }
 
   paragraphs, err := philariosDatabase.QueryForWord("Georgiana", nil)
@@ -47,5 +71,16 @@ A fearful man, all in coarse gray, with a great iron on his leg. A man with no h
     t.Errorf("Shouldn't have thrown an error when querying for word: %s", err.Error())
   }
 
-  fmt.Println(paragraphs)
+  expectedParagraphs := 2
+  if len(paragraphs) != expectedParagraphs {
+    t.Errorf("Should have obtained %d paragraphs, instead obtained %d", expectedParagraphs, len(paragraphs))
+  }
+
+  expectedPublicationId := 1
+  for _, paragraph := range paragraphs {
+    if paragraph.PublicationId != expectedPublicationId {
+      t.Errorf("Should have obtained paragraphs with PublicationId %d, instead obtained %d",
+        expectedPublicationId, paragraph.PublicationId)
+    }
+  }
 }

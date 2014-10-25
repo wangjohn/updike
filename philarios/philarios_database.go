@@ -4,6 +4,7 @@ import (
   "github.com/lib/pq"
   "database/sql"
   "strings"
+  "fmt"
 )
 
 type PhilariosDatabase interface {
@@ -19,7 +20,7 @@ type PhilariosPostgresDatabase struct {
 
 var philariosSchema = `
 CREATE TABLE IF NOT EXISTS publications (
-  id integer PRIMARY KEY,
+  id bigserial PRIMARY KEY,
   title text,
   author text,
   editor text,
@@ -30,13 +31,13 @@ CREATE TABLE IF NOT EXISTS publications (
 );
 
 CREATE TABLE IF NOT EXISTS categories (
-  id integer PRIMARY KEY,
+  id bigserial PRIMARY KEY,
   publication integer REFERENCES publications (id),
   category text
 );
 
 CREATE TABLE IF NOT EXISTS paragraphs (
-  id integer PRIMARY KEY,
+  id bigserial PRIMARY KEY,
   publication integer REFERENCES publications (id),
   body text
 );`
@@ -58,7 +59,7 @@ type Publication struct {
 }
 
 type Paragraph struct {
-  PublicationName string
+  PublicationId int
   Body string
 }
 
@@ -79,13 +80,14 @@ func (p PhilariosPostgresDatabase) QueryForWord(word string, categories []string
   }
 
   paragraphs := make([]Paragraph, 0)
-  var publicationName, body string
+  var publicationId int
+  var body string
   for rows.Next() {
-    err = rows.Scan(&publicationName, &body)
+    err = rows.Scan(&publicationId, &body)
     if err != nil {
       return nil, err
     }
-    paragraphs = append(paragraphs, Paragraph{publicationName, body})
+    paragraphs = append(paragraphs, Paragraph{publicationId, body})
   }
 
   if err = rows.Err(); err != nil {
@@ -96,8 +98,9 @@ func (p PhilariosPostgresDatabase) QueryForWord(word string, categories []string
 }
 
 func performWordQuery(word string, db *sql.DB) (*sql.Rows, error) {
-  return db.Query(`SELECT body FROM paragraphs
-    WHERE to_tsvector(body) @@ to_tsquery(?)`, word)
+  wordQuery := fmt.Sprintf(`SELECT publication, body FROM paragraphs
+    WHERE to_tsvector(body) @@ to_tsquery('%s')`, word)
+  return db.Query(wordQuery)
 }
 
 /*
@@ -117,11 +120,10 @@ func (p PhilariosPostgresDatabase) AddPublication(publication Publication) (erro
   }
 
   var publicationId int
-  err = db.QueryRow(
+  publicationQuery := fmt.Sprintf(
     `INSERT INTO publications(
         title, author, editor, date, source_url, type, encoding)
-      VALUES (
-        ?, ?, ?, ?, ?, ?, ?)
+      VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s')
       RETURNING id`,
     publication.Title,
     publication.Author,
@@ -129,7 +131,8 @@ func (p PhilariosPostgresDatabase) AddPublication(publication Publication) (erro
     publication.Date,
     publication.SourceURL,
     publication.Type,
-    publication.Encoding).Scan(&publicationId)
+    publication.Encoding)
+  err = db.QueryRow(publicationQuery).Scan(&publicationId)
   if err != nil {
     return err
   }
