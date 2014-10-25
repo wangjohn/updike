@@ -10,7 +10,6 @@ import (
 type PhilariosDatabase interface {
   QueryForWord(word string, categories []string) ([]Paragraph, error)
   AddPublication(publication Publication) (error)
-  EnsureSchema(db *sql.DB) (error)
 }
 
 type PhilariosPostgresDatabase struct {
