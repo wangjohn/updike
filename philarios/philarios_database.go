@@ -3,7 +3,9 @@ package philarios
 import (
   "github.com/lib/pq"
   "database/sql"
+  "strings"
   "time"
+  "fmt"
 )
 
 const (
@@ -77,16 +79,13 @@ func AddPublication(publication Publication) (error) {
     return err
   }
 
-  publicationStmt, err := txn.Prepare(pq.CopyIn(
-    "publications",
-    "title",
-    "author",
-    "editor",
-    "date",
-    "source_url",
-    "type",
-    "encoding"))
-  publicationResult, err = publicationStmt.Exec(
+  var publicationId int
+  publicationInsertQuery := fmt.Sprintf(
+    `INSERT INTO publications(
+        title, author, editor, date, source_url, type, encoding)
+      VALUES (
+        %s, %s, %s, %d, %s, %s, %s)
+      RETURNING id`,
     publication.Title,
     publication.Author,
     publication.Editor,
@@ -94,18 +93,10 @@ func AddPublication(publication Publication) (error) {
     publication.SourceURL,
     publication.Type,
     publication.Encoding)
+
+  err = db.QueryRow(publicationInsertQuery).Scan(&publicationId)
   if err != nil {
     return err
-  }
-  publicationId := publicationResult.LastInsertId()
-
-  paragraphStmt, err := txn.Prepare(pq.CopyIn("paragraphs", "publication", "body"))
-  paragraphs := strings.Split(publication.Text, "\n")
-  for _, paragraph := range paragraphs {
-    _, err = paragraphStmt.Exec(publicationId, paragraph)
-    if err != nil {
-      return err
-    }
   }
 
   categoryStmt, err := txn.Prepare(pq.CopyIn("categories", "publication", "category"))
@@ -115,13 +106,20 @@ func AddPublication(publication Publication) (error) {
       return err
     }
   }
-
-  _, err = stmt.Exec()
+  err = categoryStmt.Close()
   if err != nil {
     return err
   }
 
-  _, err = stmt.Close()
+  paragraphStmt, err := txn.Prepare(pq.CopyIn("paragraphs", "publication", "body"))
+  paragraphs := strings.Split(publication.Text, "\n")
+  for _, paragraph := range paragraphs {
+    _, err = paragraphStmt.Exec(publicationId, paragraph)
+    if err != nil {
+      return err
+    }
+  }
+  err = paragraphStmt.Close()
   if err != nil {
     return err
   }
