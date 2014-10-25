@@ -5,12 +5,16 @@ import (
 )
 
 const (
-  driverName = ""
-  dataSourceName = ""
+  DatabaseDriverName = "postgres"
+  DatabaseDataSourceName = "user=philarios dbnamephilarios sslmode=verify-full"
 )
 
+/*
+QueryForWord returns SQL rows of paragraphs containing the query word given as
+an argument. These are returned from the database.
+*/
 func QueryForWord(word string) (*sql.Rows, error) {
-  db, err := sql.Open(driverName, dataSourceName)
+  db, err := sql.Open(DatabaseDriverName, DatabaseDataSourceName)
   if err != nil {
     return nil, err
   }
