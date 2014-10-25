@@ -5,13 +5,36 @@ import (
   "database/sql"
   "strings"
   "time"
-  "fmt"
 )
 
 const (
   DatabaseDriverName = "postgres"
   DatabaseDataSourceName = "user=philarios dbnamephilarios sslmode=verify-full"
 )
+
+var philariosSchema = `
+CREATE TABLE IF NOT EXISTS publications (
+  id integer PRIMARY KEY,
+  title text,
+  author text,
+  editor text,
+  date timestamp,
+  source_url text,
+  encoding text,
+  type text
+);
+
+CREATE TABLE IF NOT EXISTS categories (
+  id integer PRIMARY KEY,
+  publication integer REFERENCES publications (id),
+  category text
+);
+
+CREATE TABLE IF NOT EXISTS paragraphs (
+  id integer PRIMARY KEY,
+  publication integer REFERENCES publications (id),
+  body text
+);`
 
 /*
 Publication is a structure which represents any type of publication (such as
@@ -73,6 +96,7 @@ func AddPublication(publication Publication) (error) {
   if err != nil {
     return err
   }
+  ensureSchema(db)
 
   txn, err := db.Begin()
   if err != nil {
@@ -80,11 +104,11 @@ func AddPublication(publication Publication) (error) {
   }
 
   var publicationId int
-  publicationInsertQuery := fmt.Sprintf(
+  err = db.QueryRow(
     `INSERT INTO publications(
         title, author, editor, date, source_url, type, encoding)
       VALUES (
-        %s, %s, %s, %d, %s, %s, %s)
+        ?, ?, ?, ?, ?, ?, ?)
       RETURNING id`,
     publication.Title,
     publication.Author,
@@ -92,9 +116,7 @@ func AddPublication(publication Publication) (error) {
     publication.Date.Unix(),
     publication.SourceURL,
     publication.Type,
-    publication.Encoding)
-
-  err = db.QueryRow(publicationInsertQuery).Scan(&publicationId)
+    publication.Encoding).Scan(&publicationId)
   if err != nil {
     return err
   }
@@ -130,4 +152,9 @@ func AddPublication(publication Publication) (error) {
   }
 
   return nil
+}
+
+func ensureSchema(db *sql.DB) (error) {
+  _, err := db.Exec(philariosSchema)
+  return err
 }
