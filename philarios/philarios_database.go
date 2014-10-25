@@ -11,6 +11,10 @@ const (
   DatabaseDataSourceName = "user=philarios dbnamephilarios sslmode=verify-full"
 )
 
+/*
+Publication is a structure which represents any type of publication (such as
+books or articles) which contains text.
+*/
 type Publication struct {
   Title string
   Author string
@@ -18,10 +22,14 @@ type Publication struct {
   Date time.Time
   SourceURL string
   Encoding string
+  Type string
   Text string
   Categories []Category
 }
 
+/*
+Category is a stuct which represents a category type for a publication.
+*/
 type Category struct {
   Name string
 }
@@ -54,6 +62,10 @@ func performWordQuery(word string, db *sql.DB) (*sql.Rows, error) {
     WHERE to_tsvector(body) @@ to_tsquery(?)`, word)
 }
 
+/*
+AddPublication adds a new publication to the database, adding data to the
+publications, categories, and paragraphs tables.
+*/
 func AddPublication(publication Publication) (error) {
   db, err := sql.Open(DatabaseDriverName, DatabaseDataSourceName)
   if err != nil {
@@ -65,8 +77,23 @@ func AddPublication(publication Publication) (error) {
     return err
   }
 
-  publicationStmt, err := txn.Prepare(pq.CopyIn("publications", "title", "author", "date"))
-  publicationResult, err = publicationStmt.Exec(publication.Title, publication.Author, publication.Date)
+  publicationStmt, err := txn.Prepare(pq.CopyIn(
+    "publications",
+    "title",
+    "author",
+    "editor",
+    "date",
+    "source_url",
+    "type",
+    "encoding"))
+  publicationResult, err = publicationStmt.Exec(
+    publication.Title,
+    publication.Author,
+    publication.Editor,
+    publication.Date.Unix(),
+    publication.SourceURL,
+    publication.Type,
+    publication.Encoding)
   if err != nil {
     return err
   }
