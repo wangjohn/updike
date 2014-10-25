@@ -10,7 +10,7 @@ const (
   testDataSourceName = "host=localhost user=philarios dbname=philarios sslmode=disable"
 )
 
-func setupDatabase() (PostgresStorage, error) {
+func setupDatabase() (Storage, error) {
   philariosDatabase := PostgresStorage{
     testDriverName, testDataSourceName}
 
