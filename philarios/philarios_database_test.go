@@ -10,8 +10,8 @@ const (
   testDataSourceName = "host=localhost user=philarios dbname=philarios sslmode=disable"
 )
 
-func setupDatabase() (PhilariosPostgresDatabase, error) {
-  philariosDatabase := PhilariosPostgresDatabase{
+func setupDatabase() (PostgresStorage, error) {
+  philariosDatabase := PostgresStorage{
     testDriverName, testDataSourceName}
 
   db, err := sql.Open(testDriverName, testDataSourceName)

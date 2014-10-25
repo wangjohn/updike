@@ -7,12 +7,12 @@ import (
   "fmt"
 )
 
-type PhilariosDatabase interface {
+type Storage interface {
   QueryForWord(word string, categories []string) ([]Paragraph, error)
   AddPublication(publication Publication) (error)
 }
 
-type PhilariosPostgresDatabase struct {
+type PostgresStorage struct {
   DriverName string
   DataSourceName string
 }
@@ -66,7 +66,7 @@ type Paragraph struct {
 QueryForWord returns SQL rows of paragraphs containing the query word given as
 an argument. These are returned from the database.
 */
-func (p PhilariosPostgresDatabase) QueryForWord(word string, categories []string) ([]Paragraph, error) {
+func (p PostgresStorage) QueryForWord(word string, categories []string) ([]Paragraph, error) {
   db, err := sql.Open(p.DriverName, p.DataSourceName)
   if err != nil {
     return nil, err
@@ -106,7 +106,7 @@ func performWordQuery(word string, db *sql.DB) (*sql.Rows, error) {
 AddPublication adds a new publication to the database, adding data to the
 publications, categories, and paragraphs tables.
 */
-func (p PhilariosPostgresDatabase) AddPublication(publication Publication) (error) {
+func (p PostgresStorage) AddPublication(publication Publication) (error) {
   db, err := sql.Open(p.DriverName, p.DataSourceName)
   if err != nil {
     return err
@@ -173,7 +173,7 @@ func (p PhilariosPostgresDatabase) AddPublication(publication Publication) (erro
 EnsureSchema is called on a database and ensures that a correct schema has been
 applied so that Queries on the database can occur.
 */
-func (p PhilariosPostgresDatabase) EnsureSchema(db *sql.DB) (error) {
+func (p PostgresStorage) EnsureSchema(db *sql.DB) (error) {
   _, err := db.Exec(philariosSchema)
   return err
 }
