@@ -131,9 +131,9 @@ func TargetVectors(word string) ([]WordVector, error) {
   var wordVectors []WordVector
 
   philariosDatabase := PhilariosPostgresDatabase{
-    "postgres", "user=philarios dbnamephilarios sslmode=verify-full"}
+    "postgres", "user=philarios dbname=philarios sslmode=verify-full"}
 
-  paragraphs, err := philariosDatabase.QueryForWord(word)
+  paragraphs, err := philariosDatabase.QueryForWord(word, nil)
   if err != nil {
     return wordVectors, err
   }

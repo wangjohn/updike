@@ -4,7 +4,6 @@ import (
   "github.com/lib/pq"
   "database/sql"
   "strings"
-  "time"
 )
 
 type PhilariosDatabase interface {
@@ -24,7 +23,7 @@ CREATE TABLE IF NOT EXISTS publications (
   title text,
   author text,
   editor text,
-  date timestamp,
+  date date,
   source_url text,
   encoding text,
   type text
@@ -50,7 +49,7 @@ type Publication struct {
   Title string
   Author string
   Editor string
-  Date time.Time
+  Date string
   SourceURL string
   Encoding string
   Type string
@@ -67,7 +66,7 @@ type Paragraph struct {
 QueryForWord returns SQL rows of paragraphs containing the query word given as
 an argument. These are returned from the database.
 */
-func (p PhilariosPostgresDatabase) QueryForWord(word string) ([]Paragraph, error) {
+func (p PhilariosPostgresDatabase) QueryForWord(word string, categories []string) ([]Paragraph, error) {
   db, err := sql.Open(p.DriverName, p.DataSourceName)
   if err != nil {
     return nil, err
@@ -127,7 +126,7 @@ func (p PhilariosPostgresDatabase) AddPublication(publication Publication) (erro
     publication.Title,
     publication.Author,
     publication.Editor,
-    publication.Date.Unix(),
+    publication.Date,
     publication.SourceURL,
     publication.Type,
     publication.Encoding).Scan(&publicationId)
