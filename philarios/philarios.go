@@ -133,19 +133,13 @@ func TargetVectors(word string) ([]WordVector, error) {
   philariosDatabase := PhilariosPostgresDatabase{
     "postgres", "user=philarios dbnamephilarios sslmode=verify-full"}
 
-  rows, err := philariosDatabase.QueryForWord(word)
+  paragraphs, err := philariosDatabase.QueryForWord(word)
   if err != nil {
     return wordVectors, err
   }
-  defer rows.Close()
 
-  for rows.Next() {
-    var body string
-    if err = rows.Scan(&body); err != nil {
-      return wordVectors, err
-    }
-
-    newVectors, err := paragraphTargetVectors(body, word)
+  for _, paragraph := range paragraphs {
+    newVectors, err := paragraphTargetVectors(paragraph.Body, word)
     if err != nil {
       return wordVectors, err
     }

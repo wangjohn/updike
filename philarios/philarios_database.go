@@ -8,7 +8,7 @@ import (
 )
 
 type PhilariosDatabase interface {
-  QueryForWord(word string, categories []string) (*sql.Rows, error)
+  QueryForWord(word string, categories []string) ([]Paragraph, error)
   AddPublication(publication Publication) (error)
   EnsureSchema(db *sql.DB) (error)
 }
@@ -58,27 +58,42 @@ type Publication struct {
   Categories []string
 }
 
+type Paragraph struct {
+  PublicationName string
+  Body string
+}
+
 /*
 QueryForWord returns SQL rows of paragraphs containing the query word given as
 an argument. These are returned from the database.
 */
-func (p PhilariosPostgresDatabase) QueryForWord(word string) (*sql.Rows, error) {
+func (p PhilariosPostgresDatabase) QueryForWord(word string) ([]Paragraph, error) {
   db, err := sql.Open(p.DriverName, p.DataSourceName)
   if err != nil {
     return nil, err
   }
 
   rows, err := performWordQuery(word, db)
-
+  defer rows.Close()
   if err != nil {
     return nil, err
+  }
+
+  paragraphs := make([]Paragraph, 0)
+  var publicationName, body string
+  for rows.Next() {
+    err = rows.Scan(&publicationName, &body)
+    if err != nil {
+      return nil, err
+    }
+    paragraphs = append(paragraphs, Paragraph{publicationName, body})
   }
 
   if err = rows.Err(); err != nil {
     return nil, err
   }
 
-  return rows, nil
+  return paragraphs, nil
 }
 
 func performWordQuery(word string, db *sql.DB) (*sql.Rows, error) {
@@ -153,6 +168,10 @@ func (p PhilariosPostgresDatabase) AddPublication(publication Publication) (erro
   return nil
 }
 
+/*
+EnsureSchema is called on a database and ensures that a correct schema has been
+applied so that Queries on the database can occur.
+*/
 func (p PhilariosPostgresDatabase) EnsureSchema(db *sql.DB) (error) {
   _, err := db.Exec(philariosSchema)
   return err
