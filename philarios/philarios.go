@@ -130,7 +130,10 @@ func synonymScore(score float64) (float64) {
 func TargetVectors(word string) ([]WordVector, error) {
   var wordVectors []WordVector
 
-  rows, err := QueryForWord(word)
+  philariosDatabase := PhilariosPostgresDatabase{
+    "postgres", "user=philarios dbnamephilarios sslmode=verify-full"}
+
+  rows, err := philariosDatabase.QueryForWord(word)
   if err != nil {
     return wordVectors, err
   }

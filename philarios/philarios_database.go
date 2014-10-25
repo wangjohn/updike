@@ -7,11 +7,6 @@ import (
   "time"
 )
 
-const (
-  DatabaseDriverName = "postgres"
-  DatabaseDataSourceName = "user=philarios dbnamephilarios sslmode=verify-full"
-)
-
 type PhilariosDatabase interface {
   QueryForWord(word string, categories []string) (*sql.Rows, error)
   AddPublication(publication Publication) (error)
