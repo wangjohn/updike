@@ -57,11 +57,6 @@ type Publication struct {
   Categories []string
 }
 
-type Paragraph struct {
-  PublicationId int
-  Body string
-}
-
 /*
 QueryForWord returns SQL rows of paragraphs containing the query word given as
 an argument. These are returned from the database.
