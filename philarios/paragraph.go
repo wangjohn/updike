@@ -9,11 +9,19 @@ type Paragraph struct {
   Body string
 }
 
+type TextProcessor interface {
+  ProcessParagraphs(publication Publication, publicationId int) ([]Paragraph, error)
+}
+
+type SimpleTextProcessor struct {
+
+}
+
 /*
 ProcessParagraphs processes a publication's text into a format which can be
 used for storage, and returns the paragraphs that compose the publication.
 */
-func ProcessParagraphs(publication Publication, publicationId int) ([]Paragraph, error) {
+func (t SimpleTextProcessor) ProcessParagraphs(publication Publication, publicationId int) ([]Paragraph, error) {
   var paragraphs []Paragraph
   preprocessedText, err := PreprocessPublicationText(publication)
   if err != nil {
