@@ -31,13 +31,17 @@ func (t WordVectorCollection) Swap(i, j int) {
   t[i], t[j] = t[j], t[i]
 }
 
+type Philarios struct {
+  Storage Storage
+}
+
 /*
 SentenceFindAlternativeWords takes a sentence and the start and end positions
 of a query, and finds alternative words for that query. The queryStart index
 should be the first byte of the query word, while the queryEnd index should be
 the index of the first byte after the query word.
 */
-func SentenceFindAlternativeWords(sentence string, queryStart, queryEnd, maxWords int) ([]string, error) {
+func (p Philarios) SentenceFindAlternativeWords(sentence string, queryStart, queryEnd, maxWords int) ([]string, error) {
   beforeString := sentence[:queryStart]
   afterString := sentence[queryEnd:]
   queryWord := sentence[queryStart:queryEnd]
@@ -45,7 +49,7 @@ func SentenceFindAlternativeWords(sentence string, queryStart, queryEnd, maxWord
   beforeWords := SplitWords(beforeString)
   afterWords := SplitWords(afterString)
 
-  return FindAlternativeWords(beforeWords, afterWords, queryWord, maxWords)
+  return p.FindAlternativeWords(beforeWords, afterWords, queryWord, maxWords)
 }
 
 /*
@@ -54,7 +58,7 @@ words (not exceeding maxWords), which may be a good fit given the context. The
 words before the queryWord in the sentence are given by beforeWords, and the
 words after are given by afterWords.
 */
-func FindAlternativeWords(beforeWords, afterWords []string, queryWord string, maxWords int) ([]string, error) {
+func (p Philarios) FindAlternativeWords(beforeWords, afterWords []string, queryWord string, maxWords int) ([]string, error) {
   alternativeWords := make([]string, 0)
 
   // TODO: implement me
@@ -68,9 +72,9 @@ used as an argument, but which are usually used in place of that word.
 
 The maxWords parameter specifies the maximum number of words to return.
 */
-func AlternativeWords(word string, maxWords int) ([]string, error) {
+func (p Philarios) AlternativeWords(word string, maxWords int) ([]string, error) {
   alternativeWords := make([]string, 0)
-  alternativeWordVectors, err := AlternativeWordVectors(word, maxWords)
+  alternativeWordVectors, err := p.AlternativeWordVectors(word, maxWords)
   if err != nil {
     return alternativeWords, err
   }
@@ -85,10 +89,10 @@ func AlternativeWords(word string, maxWords int) ([]string, error) {
 /*
 AlternativeWordVectors returns alternative word vectors for a particular word.
 */
-func AlternativeWordVectors(word string, maxWords int) ([]WordVector, error) {
+func (p Philarios) AlternativeWordVectors(word string, maxWords int) ([]WordVector, error) {
   wordVectors := make(WordVectorCollection, 0)
 
-  targetVectors, err := TargetVectors(word)
+  targetVectors, err := p.TargetVectors(word)
   if err != nil {
     return wordVectors, err
   }
@@ -100,7 +104,7 @@ func AlternativeWordVectors(word string, maxWords int) ([]WordVector, error) {
   }
 
   for _, synonym := range synonyms {
-    synonymVectors, err := TargetVectors(synonym)
+    synonymVectors, err := p.TargetVectors(synonym)
     if err != nil {
       return wordVectors, err
     }
@@ -127,7 +131,7 @@ func synonymScore(score float64) (float64) {
   return score
 }
 
-func TargetVectors(word string) ([]WordVector, error) {
+func (p Philarios) TargetVectors(word string) ([]WordVector, error) {
   var wordVectors []WordVector
 
   storage := PostgresStorage{
@@ -210,5 +214,6 @@ func lookForWords(paragraph string, wordsToCapture int, atBeginning bool) ([]str
 
 func Synonyms(word string) ([]string, error) {
   // TODO: implement
-  return nil, nil
+  synonyms := make([]string, 0)
+  return synonyms, nil
 }

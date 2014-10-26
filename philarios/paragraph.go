@@ -34,10 +34,18 @@ func ProcessParagraphs(publication Publication, publicationId int) ([]Paragraph,
   return paragraphs, nil
 }
 
+/*
+PreprocessPublicationText takes a publication and preprocesses it so that the
+text is ready to be turned into paragraphs.
+*/
 func PreprocessPublicationText(publication Publication) (string, error) {
   return publication.Text, nil
 }
 
+/*
+PostprocessParagraph takes a paragraph and processes the text so that it is
+ready to be stored in Storage.
+*/
 func PostprocessParagraph(paragraph string) (string, error) {
   return paragraph, nil
 }
