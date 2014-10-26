@@ -49,3 +49,13 @@ ready to be stored in Storage.
 func PostprocessParagraph(paragraph string) (string, error) {
   return paragraph, nil
 }
+
+/*
+NormaizedWord takes a word and returns a word that is normalized and ready to
+be stored.
+*/
+func NormalizedWord(word string) (string) {
+  word = strings.ToLower(word)
+  word = strings.Trim(word)
+  return word
+}

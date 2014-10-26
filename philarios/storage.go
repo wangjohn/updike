@@ -38,7 +38,14 @@ CREATE TABLE IF NOT EXISTS paragraphs (
   id bigserial PRIMARY KEY,
   publication integer REFERENCES publications (id),
   body text
-);`
+);
+
+CREATE TABLE IF NOT EXISTS frequencies (
+  id bigserial PRIMARY KEY,
+  word text,
+  count integer,
+);
+`
 
 /*
 Publication is a structure which represents any type of publication (such as
