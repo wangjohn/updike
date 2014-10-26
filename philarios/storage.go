@@ -3,7 +3,6 @@ package philarios
 import (
   "github.com/lib/pq"
   "database/sql"
-  "strings"
   "fmt"
 )
 
@@ -144,9 +143,13 @@ func (p PostgresStorage) AddPublication(publication Publication) (error) {
   }
 
   paragraphStmt, err := txn.Prepare(pq.CopyIn("paragraphs", "publication", "body"))
-  paragraphs := strings.Split(publication.Text, "\n")
+  paragraphs, err := ProcessParagraphs(publication, publicationId)
+  if err != nil {
+    return err
+  }
+
   for _, paragraph := range paragraphs {
-    _, err = paragraphStmt.Exec(publicationId, paragraph)
+    _, err = paragraphStmt.Exec(paragraph.PublicationId, paragraph.Body)
     if err != nil {
       return err
     }

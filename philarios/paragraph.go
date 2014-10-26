@@ -39,5 +39,5 @@ func PreprocessPublicationText(publication Publication) (string, error) {
 }
 
 func PostprocessParagraph(paragraph string) (string, error) {
-  return string, nil
+  return paragraph, nil
 }
