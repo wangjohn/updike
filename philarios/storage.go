@@ -143,7 +143,7 @@ func (p PostgresStorage) AddPublication(publication Publication) (error) {
   }
 
   paragraphStmt, err := txn.Prepare(pq.CopyIn("paragraphs", "publication", "body"))
-  paragraphs, err := ProcessParagraphs(publication, publicationId)
+  paragraphs, err := p.ProcessParagraphs(publication, publicationId)
   if err != nil {
     return err
   }

@@ -33,7 +33,6 @@ func (t WordVectorCollection) Swap(i, j int) {
 
 type WordFactory struct {
   Storage Storage
-  TextProcessor TextProcessor
 }
 
 /*
