@@ -135,10 +135,7 @@ func synonymScore(score float64) (float64) {
 func (p WordFactory) TargetVectors(word string) ([]WordVector, error) {
   var wordVectors []WordVector
 
-  storage := PostgresStorage{
-    "postgres", "user=philarios dbname=philarios sslmode=verify-full"}
-
-  paragraphs, err := storage.QueryForWord(word, nil)
+  paragraphs, err := p.Storage.QueryForWord(word, nil)
   if err != nil {
     return wordVectors, err
   }
