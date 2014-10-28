@@ -1,6 +1,7 @@
 package philarios
 
 import (
+  "github.com/wangjohn/updike/textprocessor"
   "github.com/lib/pq"
   "database/sql"
   "fmt"
@@ -61,6 +62,11 @@ type Publication struct {
   Type string
   Text string
   Categories []string
+}
+
+type Paragraph struct {
+  PublicationId int
+  Body string
 }
 
 /*
@@ -150,7 +156,7 @@ func (p PostgresStorage) AddPublication(publication Publication) (error) {
   }
 
   paragraphStmt, err := txn.Prepare(pq.CopyIn("paragraphs", "publication", "body"))
-  paragraphs, err := p.ProcessParagraphs(publication, publicationId)
+  paragraphs, err := textprocessor.ProcessParagraphs(publication, publicationId)
   if err != nil {
     return err
   }

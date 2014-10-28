@@ -24,6 +24,7 @@ func setupDatabase() (Storage, error) {
     DROP TABLE IF EXISTS paragraphs;
     DROP TABLE IF EXISTS categories;
     DROP TABLE IF EXISTS publications;
+    DROP TABLE IF EXISTS frequencies;
   `)
   if err != nil {
     return philariosDatabase, err
