@@ -2,6 +2,13 @@ package textprocessor
 
 import (
   "strings"
+  "errors"
+  "encoding/utf8"
+)
+
+const (
+  vowels = []rune{'a', 'e', 'i', 'o', 'u', 'y'}
+  ingRunes = []rune{'i', 'n', 'g'}
 )
 
 /*
@@ -52,7 +59,37 @@ NormaizedWord takes a word and returns a word that is normalized and ready to
 be stored.
 */
 func NormalizedWord(word string) (string, error) {
+  if !utf8.ValidString(word) {
+    return "", errors.New("The word '%s' is not a valid utf-8 string.", word)
+  }
+
   word = strings.ToLower(word)
   word = strings.TrimSpace(word)
+
+  runes := getRunesFromString(word)
+
   return word, nil
+}
+
+func getRunesFromString(str string) ([]rune, error) {
+  runes := make([]string, 0)
+  for i, w := 0, 0; i < len(str); i += w {
+    runeValue, width := utf8.DecodeRuneInString(str[i:])
+    runes = append(runes, runeValue)
+    w += width
+  }
+
+  return runes
+}
+
+func handleSuffixIng(runes []rune) (bool, string) {
+  length := len(runes)
+  if length >= 3 {
+    lastThree := runes[(length-3):length]
+    if reflect.DeepEqual(lastThree, ingRunes) {
+      // TODO: implement ing suffix removal
+    }
+  }
+
+  return false, ""
 }

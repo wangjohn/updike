@@ -37,3 +37,37 @@ func TestProcessParagraphs(t *testing.T) {
     }
   }
 }
+
+func TestNormalizedWord(t *testing.T) {
+  fixtures := []struct {
+    Word string
+    Expected string
+  }{
+    {"Naming", "name"},
+    {"boom-cam", "boom-cam"},
+    {"safes", "safe"},
+    {"headphones", "headphone"},
+    {"Ryan's", "ryan"},
+    {"CustomErs'", "customer"},
+    {"zamboni", "zamboni"},
+    {"facing", "face"},
+    {"payed", "pay"},
+    {"lying", "lie"},
+    {"stopping", "stop"},
+    {"stopped", "stop"},
+    {"dancing", "dance"},
+    {"danced", "dance"},
+  }
+
+  for _, fixture := range fixtures {
+    result, err := NormalizedWord(fixture.Word)
+    if err != nil {
+      t.Errorf("Did not expect error for NormalizedWord: %s", err.Error())
+    }
+
+    if result != fixture.Expected {
+      t.Errorf("Non-matching result. Expected '%s', but obtained '%s'",
+        fixture.Expected, result)
+    }
+  }
+}
