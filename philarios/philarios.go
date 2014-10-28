@@ -3,6 +3,7 @@ package philarios
 import (
   "regexp"
   "github.com/wangjohn/quickselect"
+  "github.com/wangjohn/updike/storage"
 
   "fmt"
   "strings"
@@ -32,7 +33,7 @@ func (t WordVectorCollection) Swap(i, j int) {
 }
 
 type WordFactory struct {
-  Storage Storage
+  Storage storage.Storage
 }
 
 /*

@@ -156,13 +156,13 @@ func (p PostgresStorage) AddPublication(publication Publication) (error) {
   }
 
   paragraphStmt, err := txn.Prepare(pq.CopyIn("paragraphs", "publication", "body"))
-  paragraphs, err := textprocessor.ProcessParagraphs(publication, publicationId)
+  paragraphs, err := textprocessor.ProcessParagraphs(publication.Text)
   if err != nil {
     return err
   }
 
   for _, paragraph := range paragraphs {
-    _, err = paragraphStmt.Exec(paragraph.PublicationId, paragraph.Body)
+    _, err = paragraphStmt.Exec(publicationId, paragraph)
     if err != nil {
       return err
     }
