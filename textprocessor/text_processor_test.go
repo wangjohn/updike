@@ -71,3 +71,38 @@ func TestNormalizedWord(t *testing.T) {
     }
   }
 }
+
+func TestHandleSuffixIng(t *testing.T) {
+  fixtures := []struct {
+    Word string
+    Expected string
+    ExpectedBool bool
+  }{
+    {"string", "string", false},
+    {"having", "have", true},
+    {"making", "make", true},
+    {"starring", "star", true},
+    {"stopping", "stop", true},
+    {"beginning", "begin", true},
+    {"lying", "lie", true},
+    {"dying", "die", true},
+    {"staying", "stay", true},
+  }
+
+  for _, fixture := range fixtures {
+    inputRune := getRunesFromString(fixture.Word)
+    expectedRune := getRunesFromString(fixture.Expected)
+
+    boolResult, result := handleSuffixIng(inputRune)
+    if boolResult != fixture.ExpectedBool {
+      t.Errorf("Did not expect boolean result. Expected '%t' received '%t'.",
+        fixture.ExpectedBool, boolResult)
+    }
+
+    if !reflect.DeepEqual(result, expectedRune) {
+      t.Errorf("Did not obtain expected string. Expected '%s' received '%s'.",
+        expectedRune, result)
+    }
+  }
+}
+
