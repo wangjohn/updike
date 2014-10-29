@@ -169,6 +169,10 @@ func handleSuffixEd(runes []rune) (bool, []rune) {
   return false, []rune{}
 }
 
+func handleApostrophe(runes []rune) (bool, []rune) {
+
+}
+
 func handleImproperWord(runes []rune) (bool, []rune) {
   // TODO: implement
   return false, []rune{}
