@@ -78,7 +78,10 @@ func TestHandleSuffixIng(t *testing.T) {
     Expected string
     ExpectedBool bool
   }{
-    {"string", "string", false},
+    {"bling", "", false},
+    {"zing", "", false},
+    {"ding", "", false},
+    {"string", "", false},
     {"having", "have", true},
     {"making", "make", true},
     {"starring", "star", true},
@@ -100,9 +103,88 @@ func TestHandleSuffixIng(t *testing.T) {
     }
 
     if !reflect.DeepEqual(result, expectedRune) {
-      t.Errorf("Did not obtain expected string. Expected '%s' received '%s'.",
+      t.Errorf("Did not obtain expected string. Expected '%q' received '%q'.",
         expectedRune, result)
     }
   }
 }
 
+func TestHandleSuffixEd(t *testing.T) {
+  fixtures := []struct {
+    Word string
+    Expected string
+    ExpectedBool bool
+  }{
+    {"stopped", "stop", true},
+    {"died", "die", true},
+    {"lied", "lie", true},
+    {"accoladed", "accolade", true},
+    {"compacted", "compact", true},
+    {"phoned", "phone", true},
+    {"danced", "dance", true},
+    {"bleed", "", false},
+    {"zed", "", false},
+  }
+
+  for _, fixture := range fixtures {
+    inputRune := getRunesFromString(fixture.Word)
+    expectedRune := getRunesFromString(fixture.Expected)
+
+    boolResult, result := handleSuffixEd(inputRune)
+    if boolResult != fixture.ExpectedBool {
+      t.Errorf("Did not expect boolean result. Expected '%t' received '%t'.",
+        fixture.ExpectedBool, boolResult)
+    }
+
+    if !reflect.DeepEqual(result, expectedRune) {
+      t.Errorf("Did not obtain expected string. Expected '%q' received '%q'.",
+        expectedRune, result)
+    }
+  }
+}
+
+func TestImproperWords(t *testing.T) {
+  fixtures := []struct {
+    Word string
+    Expected string
+    ExpectedBool bool
+  }{
+    {"began", "begin", true},
+    {"mice", "mouse", true},
+  }
+
+  for _, fixture := range fixtures {
+    inputRune := getRunesFromString(fixture.Word)
+    expectedRune := getRunesFromString(fixture.Expected)
+
+    boolResult, result := handleImproperWord(inputRune)
+    if boolResult != fixture.ExpectedBool {
+      t.Errorf("Did not expect boolean result. Expected '%t' received '%t'.",
+        fixture.ExpectedBool, boolResult)
+    }
+
+    if !reflect.DeepEqual(result, expectedRune) {
+      t.Errorf("Did not obtain expected string. Expected '%q' received '%q'.",
+        expectedRune, result)
+    }
+  }
+}
+
+func TestGetRunesFromString(t *testing.T) {
+  fixtures := []struct {
+    String string
+    ExpectedRune []rune
+  }{
+    {"string", []rune{'s', 't', 'r', 'i', 'n', 'g'}},
+    {"hello", []rune{'h', 'e', 'l', 'l', 'o'}},
+    {"dangalang", []rune{'d', 'a', 'n', 'g', 'a', 'l', 'a', 'n', 'g'}},
+  }
+
+  for _, fixture := range fixtures {
+    result := getRunesFromString(fixture.String)
+    if !reflect.DeepEqual(result, fixture.ExpectedRune) {
+      t.Errorf("Obtained unexpected runes from string. Expected '%q' received '%q'.",
+        fixture.ExpectedRune, result)
+    }
+  }
+}

@@ -83,7 +83,7 @@ func getRunesFromString(str string) ([]rune) {
   for i, w := 0, 0; i < len(str); i += w {
     runeValue, width := utf8.DecodeRuneInString(str[i:])
     runes = append(runes, runeValue)
-    w += width
+    w = width
   }
 
   return runes
@@ -98,13 +98,10 @@ func handleSuffixIng(runes []rune) (bool, []rune) {
 
       // For `ing` suffixes that are preceded by a `y`, like `staying` or `lying`
       if precedingRune == 'y' {
-        result := deepCopy(runes[:(length-4)])
-        result = append(result, 'i', 'e')
-        result = deepCopy(runes[:(length-3)])
-        if isWord(result) {
-          return true, result
-        } else {
-          return true, result
+        ieResult := deepCopy(runes[:(length-4)])
+        ieResult = append(ieResult, 'i', 'e')
+        if isWord(ieResult) {
+          return true, ieResult
         }
 
       // For `ing` suffixes that are preceded by a double consonant, like `stopping`
@@ -115,13 +112,12 @@ func handleSuffixIng(runes []rune) (bool, []rune) {
             return true, result
           }
         }
+      }
 
       // For all other `ing` suffixes
-      } else {
-        result := deepCopy(runes[:(length-3)])
-        if isWord(result) {
-          return true, result
-        }
+      result := deepCopy(runes[:(length-3)])
+      if isWord(result) {
+        return true, result
       }
     }
   }
@@ -134,10 +130,47 @@ func handleSuffixEd(runes []rune) (bool, []rune) {
   if length >= 4 {
     lastTwo := runes[(length-2):length]
     if reflect.DeepEqual(lastTwo, edRunes) {
+      precedingRune := runes[length-3]
 
+      // For `ed` suffixes that are preceded by i, like `lied` or `died`
+      if precedingRune == 'i' {
+        result := deepCopy(runes[:(length-1)])
+        if isWord(result) {
+          return true, result
+        }
+
+      // For `ed` suffixes that are preceded by a constant
+      } else if !isVowel(precedingRune) {
+        // If preceded by a double consonant, liked `stopped`
+        if precedingRune == runes[length-4] {
+          result := deepCopy(runes[:(length-3)])
+          if isWord(result) {
+            return true, result
+          }
+
+        // If preceded by a dropped e, like `phoned` or `danced`
+        } else {
+          eResult := deepCopy(runes[:(length-2)])
+          eResult = append(eResult, 'e')
+          if isWord(eResult) {
+            return true, eResult
+          }
+        }
+      }
+
+      // For all other `ed` suffixes
+      result := deepCopy(runes[:(length-2)])
+      if isWord(result) {
+        return true, result
+      }
     }
   }
 
+  return false, []rune{}
+}
+
+func handleImproperWord(runes []rune) (bool, []rune) {
+  // TODO: implement
   return false, []rune{}
 }
 
