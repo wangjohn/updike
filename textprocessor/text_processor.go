@@ -3,6 +3,7 @@ package textprocessor
 import (
   "strings"
   "fmt"
+  "log"
   "reflect"
   "unicode/utf8"
 )
@@ -15,8 +16,81 @@ var vowels = map[rune]bool {
   'u': true,
   'y': true,
 }
-var ingRunes = []rune{'i', 'n', 'g'}
-var edRunes = []rune{'e', 'd'}
+
+type Consonant struct {
+  Index int
+}
+
+func (c Consonant) IsConsonant(char rune) (bool) {
+  return vowels[char]
+}
+
+type Word struct {
+  StartIndex int
+  EndIndex int
+}
+
+type filteredFunction struct {
+  filterFunc func
+}
+
+type processingRule struct {
+  processFunc func
+}
+
+func (w Word) GetSlice(word string) ([]rune) {
+  wordRunes := getRunesFromString(word)
+  startIndex := w.StartIndex
+
+  var endIndex int
+  if w.EndIndex < 0 {
+    endIndex = len(wordRunes) - w.EndIndex + 1
+  } else {
+    endIndex = w.EndIndex
+  }
+
+  if endIndex < 0 {
+    log.Fatal(`Specified an EndIndex on a word that cannot exist. You specified
+               '%d', but the word only has length %d`, w.EndIndex, len(wordRunes))
+  }
+
+  if startIndex > endIndex {
+    log.Fatal(`Specified a StartIndex '%d' on a word that is greater than the
+              EndIndex '%d' (for word of length '%d').`,
+              w.StartIndex, w.EndIndex, len(wordRunes))
+  }
+
+  return wordRunes[startIndex:endIndex]
+}
+
+func filterBy(filterFunc func) (filterFunction) {
+  return filteredFunction{filterFunc}
+}
+
+func (f filterFunction) try(args ...interface{}) (func) {
+  processFunc := func (word string) (bool, []rune) {
+    if !f.filterFunc(word) {
+      return false, []rune{}
+    }
+
+    runeResult := make([]rune, 0)
+    for _, argument := range args {
+      case argument.(type) {
+      switch Word
+        currentRunes := argument.GetSlice(word)
+        runeResult = append(runeResult, currentRunes...)
+      switch rune
+        runeResult = append(runeResult, argument)
+      default
+        log.Fatal(`Used an unknown argument type in the 'try' method. Argument
+                   '%q' with type '%T' cannot but used.`, argument, argument)
+      }
+    }
+    return true, runeResult
+  }
+
+  return processingRule{processFunc}
+}
 
 /*
 ProcessParagraphs processes a publication's text into a format which can be
@@ -179,7 +253,6 @@ func handleImproperWord(runes []rune) (bool, []rune) {
 }
 
 func isVowel(char rune) (bool) {
-  return vowels[char]
 }
 
 func deepCopy(runes []rune) ([]rune) {
