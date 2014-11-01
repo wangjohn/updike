@@ -17,11 +17,15 @@ var vowels = map[rune]bool {
   'y': true,
 }
 
+type Vowel struct {
+  Index int
+}
+
 type Consonant struct {
   Index int
 }
 
-func (c Consonant) IsConsonant(char rune) (bool) {
+func IsVowel(char rune) (bool) {
   return vowels[char]
 }
 
@@ -95,6 +99,13 @@ func FilterBy(filterType string, args ...interface{}) (IntermediateProcessingRes
   return processingResult.FilterBy(filterType, args)
 }
 
+/*
+FilterBy defines a declaration for filtering words by a particular set of instructions.
+The filterType can be one of the following:
+  - "LongerThan"(integer): Filters words to be longer than a certain integer
+  - "EndsWith"(Consonants/runes): Filters words to end with a certain set of consonants
+    or rune characters.
+*/
 func (d DefaultIntermediateProcessingResult) FilterBy(filterType string, args ...interface{}) (IntermediateProcessingResult) {
   var currentFilterFunction FilterFunction
 
@@ -103,17 +114,72 @@ func (d DefaultIntermediateProcessingResult) FilterBy(filterType string, args ..
     currentFilterFunction = func(word string) (bool) {
       wordRunes := getRunesFromString(word)
       if len(args) != 1 {
-        log.Fatal("Must use a single argument for `LongerThan` filter type.")
+        log.Fatal("Must use a single argument for 'LongerThan' filter type.")
       }
       length, validInt := args[0].(int)
       if validInt {
-        log.Fatal("Must use an integer as the argument for `LongerThan` filter type.")
+        log.Fatal("Must use an integer as the argument for 'LongerThan' filter type.")
       }
       return len(wordRunes) > length
     }
   case "EndsWith":
     currentFilterFunction = func(word string) (bool) {
-      // TODO: implement this
+      wordRunes := getRunesFromString(word)
+
+      // Not enough characters in word, so it can't possibly end with the arguments provided
+      if len(wordRunes) < len(args) {
+        return false
+      }
+
+      consonantMapping := make(map[int][]int)
+      vowelMapping := make(map[int][]int)
+      for i, argument := range args {
+        wordIndex := len(wordRunes) - i - 1
+
+        switch arg := argument.(type) {
+        case Consonant:
+          consonantMapping[arg.Index] = append(consonantMapping[arg.Index], wordIndex)
+        case Vowel:
+          vowelMapping[arg.Index] = append(vowelMapping[arg.Index], wordIndex)
+        case rune:
+          if wordRunes[wordIndex] != arg {
+            return false
+          }
+        default:
+          log.Fatal("Invalid argument type '%T' for 'EndsWith' filter type.", argument)
+        }
+      }
+
+      for consonantIndex := range consonantMapping {
+        var requiredLetter rune
+        for j, wordIndex := range consonantMapping[consonantIndex] {
+          currentLetter := wordRunes[wordIndex]
+          if !IsVowel(currentLetter) {
+            return false
+          }
+          if j == 0 {
+            requiredLetter = currentLetter
+          } else if currentLetter != requiredLetter {
+            return false
+          }
+        }
+      }
+
+      for vowelIndex := range vowelMapping {
+        var requiredLetter rune
+        for j, wordIndex := range vowelMapping[vowelIndex] {
+          currentLetter := wordRunes[wordIndex]
+          if !IsVowel(currentLetter) {
+            return false
+          }
+          if j == 0 {
+            requiredLetter = currentLetter
+          } else if currentLetter != requiredLetter {
+            return false
+          }
+        }
+      }
+
       return true
     }
   default:
