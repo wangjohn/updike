@@ -74,7 +74,6 @@ for chaining together declarations of a processing rule.
 type IntermediateProcessingResult interface {
   FilterBy(filterType string, args ...interface{}) (IntermediateProcessingResult)
   Try(args ...interface{}) (ProcessingRule)
-  WantWord(word string) (bool)
 }
 
 /*
@@ -100,18 +99,19 @@ func (d DefaultIntermediateProcessingResult) FilterBy(filterType string, args ..
   var currentFilterFunction FilterFunction
 
   switch filterType {
-  case filterType == "LongerThan":
+  case "LongerThan":
     currentFilterFunction = func(word string) (bool) {
       wordRunes := getRunesFromString(word)
       if len(args) != 1 {
         log.Fatal("Must use a single argument for `LongerThan` filter type.")
       }
-      if length, validInt := args[0].(int); validInt {
+      length, validInt := args[0].(int)
+      if validInt {
         log.Fatal("Must use an integer as the argument for `LongerThan` filter type.")
       }
       return len(wordRunes) > length
     }
-  case filterType == "EndsWith":
+  case "EndsWith":
     currentFilterFunction = func(word string) (bool) {
       // TODO: implement this
       return true
@@ -138,12 +138,14 @@ func (d DefaultIntermediateProcessingResult) Try(args ...interface{}) (Processin
     runeResult := make([]rune, 0)
     for _, argument := range args {
       switch argument.(type) {
-      case Word
-        currentRunes := argument.GetSlice(word)
+      case Word:
+        wordArgument, _ := argument.(Word)
+        currentRunes := wordArgument.GetSlice(word)
         runeResult = append(runeResult, currentRunes...)
-      case rune
-        runeResult = append(runeResult, argument)
-      default
+      case rune:
+        runeArgument, _ := argument.(rune)
+        runeResult = append(runeResult, runeArgument)
+      default:
         log.Fatal(`Used an unknown argument type in the 'Try' method. Argument
                   '%q' with type '%T' cannot but used.`, argument, argument)
       }
@@ -153,3 +155,15 @@ func (d DefaultIntermediateProcessingResult) Try(args ...interface{}) (Processin
 
   return ProcessingRule{processFunc}
 }
+
+func getRunesFromString(str string) ([]rune) {
+  runes := make([]rune, 0)
+  for i, w := 0, 0; i < len(str); i += w {
+    runeValue, width := utf8.DecodeRuneInString(str[i:])
+    runes = append(runes, runeValue)
+    w = width
+  }
+
+  return runes
+}
+
