@@ -38,6 +38,52 @@ func TestProcessParagraphs(t *testing.T) {
   }
 }
 
+func TestGetSlice(t *testing.T) {
+  fixtures := []struct {
+    Word string
+    StartIndex int
+    EndIndex int
+    Expected string
+  }{
+    {"mayo", 0, -1, "may"},
+    {"blog-ger", 0, -3, "blog-"},
+    {"fiver", 1, -1, "ive"},
+    {"blob", 3, 3, ""},
+    {"", 0, 0, ""},
+    {"nobjobclob", 3, 6, "job"},
+    {"computer", 0, 8, "computer"},
+  }
+
+  for _, fixture := range fixtures {
+    wordObj := Word{fixture.StartIndex, fixture.EndIndex}
+    sliceRunes := wordObj.GetSlice(fixture.Word)
+
+    if !reflect.DeepEqual(fixture.Expected, string(sliceRunes)) {
+      t.Errorf("Non-matching result. Expected '%s', but obtained '%q'",
+        fixture.Expected, sliceRunes)
+    }
+  }
+}
+
+func TestGetRunesFromString(t *testing.T) {
+  fixtures := []struct {
+    String string
+    ExpectedRune []rune
+  }{
+    {"string", []rune{'s', 't', 'r', 'i', 'n', 'g'}},
+    {"hello", []rune{'h', 'e', 'l', 'l', 'o'}},
+    {"dangalang", []rune{'d', 'a', 'n', 'g', 'a', 'l', 'a', 'n', 'g'}},
+  }
+
+  for _, fixture := range fixtures {
+    result := getRunesFromString(fixture.String)
+    if !reflect.DeepEqual(result, fixture.ExpectedRune) {
+      t.Errorf("Obtained unexpected runes from string. Expected '%q' received '%q'.",
+        fixture.ExpectedRune, result)
+    }
+  }
+}
+
 func TestNormalizedWord(t *testing.T) {
   fixtures := []struct {
     Word string
@@ -72,41 +118,15 @@ func TestNormalizedWord(t *testing.T) {
   }
 }
 
-func TestGetSlice(t *testing.T) {
-  fixtures := []struct {
-    Word string
-    StartIndex int
-    EndIndex int
-    Expected string
-  }{
-    {"mayo", 0, -1, "may"},
-    {"blog-ger", 0, -3, "blog-"},
-    {"fiver", 1, -1, "ive"},
-    {"blob", 3, 3, ""},
-    {"", 0, 0, ""},
-    {"nobjobclob", 3, 6, "job"},
-    {"computer", 0, 8, "computer"},
-  }
-
-  for _, fixture := range fixtures {
-    wordObj := Word{fixture.StartIndex, fixture.EndIndex}
-    sliceRunes := wordObj.GetSlice(fixture.Word)
-
-    if !reflect.DeepEqual(fixture.Expected, string(sliceRunes)) {
-      t.Errorf("Non-matching result. Expected '%s', but obtained '%q'",
-        fixture.Expected, sliceRunes)
-    }
-  }
-}
-
 /*
-Testing for `ing` rules
+============================
+Testing for ING suffix rules
+============================
 */
-
 var textProcessorIngRules = []ProcessingRule{
-  FilterBy("EndsWith", "ying").Try(Word{0,-4}, 'i', 'e'),
-  FilterBy("EndsWith", Consonant{1}, Consonant{1}, "ing").Try(Word{0,-4}),
-  FilterBy("EndsWith", "ing").Try(Word{0,-3}),
+  FilterBy("EndsWith", Consonant{1}, Consonant{1}, "ing").FilterBy("LongerThan", 5).Try(Word{0,-4}),
+  FilterBy("EndsWith", "ying").FilterBy("LongerThan", 4).Try(Word{0,-4}, 'i', 'e'),
+  FilterBy("EndsWith", "ing").FilterBy("LongerThan", 3).Try(Word{0,-3}),
 }
 
 func handleSuffixIng(word string) (string, error) {
@@ -146,14 +166,16 @@ func TestHandleSuffixIng(t *testing.T) {
     }
 
     if !reflect.DeepEqual(result, fixture.Expected) {
-      t.Errorf("Did not obtain expected string. Expected '%q' received '%q'.",
+      t.Errorf("Did not obtain expected string. Expected %q received %q.",
         fixture.Expected, result)
     }
   }
 }
 
 /*
-Testing for `ed` rules
+===========================
+Testing for ED suffix rules
+===========================
 */
 
 var textProcessorEdRules = []ProcessingRule{
@@ -199,25 +221,6 @@ func TestHandleSuffixEd(t *testing.T) {
     if !reflect.DeepEqual(result, fixture.Expected) {
       t.Errorf("Did not obtain expected string. Expected '%q' received '%q'.",
         fixture.Expected, result)
-    }
-  }
-}
-
-func TestGetRunesFromString(t *testing.T) {
-  fixtures := []struct {
-    String string
-    ExpectedRune []rune
-  }{
-    {"string", []rune{'s', 't', 'r', 'i', 'n', 'g'}},
-    {"hello", []rune{'h', 'e', 'l', 'l', 'o'}},
-    {"dangalang", []rune{'d', 'a', 'n', 'g', 'a', 'l', 'a', 'n', 'g'}},
-  }
-
-  for _, fixture := range fixtures {
-    result := getRunesFromString(fixture.String)
-    if !reflect.DeepEqual(result, fixture.ExpectedRune) {
-      t.Errorf("Obtained unexpected runes from string. Expected '%q' received '%q'.",
-        fixture.ExpectedRune, result)
     }
   }
 }
