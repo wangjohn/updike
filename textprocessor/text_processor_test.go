@@ -72,100 +72,106 @@ func TestNormalizedWord(t *testing.T) {
   }
 }
 
+/*
+Testing for `ing` rules
+*/
+
+var textProcessorIngRules = []ProcessingRule{
+  FilterBy("EndsWith", "ying").Try(Word{0,-4}, 'i', 'e'),
+  FilterBy("EndsWith", Consonant{1}, Consonant{1}, "ing").Try(Word{0,-4}),
+  FilterBy("EndsWith", "ing").Try(Word{0,-3}),
+}
+
+func handleSuffixIng(word string) (string, error) {
+  for _, rule := range textProcessorIngRules {
+    applies, normalizedRunes := rule.Rule(word)
+    if applies {
+      return string(normalizedRunes), nil
+    }
+  }
+
+  return word, nil
+}
+
 func TestHandleSuffixIng(t *testing.T) {
   fixtures := []struct {
     Word string
     Expected string
-    ExpectedBool bool
   }{
-    {"bling", "", false},
-    {"zing", "", false},
-    {"ding", "", false},
-    {"string", "", false},
-    {"having", "have", true},
-    {"making", "make", true},
-    {"starring", "star", true},
-    {"stopping", "stop", true},
-    {"beginning", "begin", true},
-    {"lying", "lie", true},
-    {"dying", "die", true},
-    {"staying", "stay", true},
+    {"bling", "bling"},
+    {"zing", "zing"},
+    {"ding", "ding"},
+    {"string", "string"},
+    {"having", "have"},
+    {"making", "make"},
+    {"starring", "star"},
+    {"stopping", "stop"},
+    {"beginning", "begin"},
+    {"lying", "lie"},
+    {"dying", "die"},
+    {"staying", "stay"},
   }
 
   for _, fixture := range fixtures {
-    inputRune := getRunesFromString(fixture.Word)
-    expectedRune := getRunesFromString(fixture.Expected)
-
-    boolResult, result := handleSuffixIng(inputRune)
-    if boolResult != fixture.ExpectedBool {
-      t.Errorf("Did not expect boolean result. Expected '%t' received '%t'.",
-        fixture.ExpectedBool, boolResult)
+    result, err := handleSuffixIng(fixture.Word)
+    if err != nil {
+      t.Errorf("Did not expect handleSuffixIng to throw an error: %s", err.Error())
     }
 
-    if !reflect.DeepEqual(result, expectedRune) {
+    if !reflect.DeepEqual(result, fixture.Expected) {
       t.Errorf("Did not obtain expected string. Expected '%q' received '%q'.",
-        expectedRune, result)
+        fixture.Expected, result)
     }
   }
+}
+
+/*
+Testing for `ed` rules
+*/
+
+var textProcessorEdRules = []ProcessingRule{
+  FilterBy("EndsWith", "ied").Try(Word{0,-1}),
+  FilterBy("EndsWith", Consonant{1}, Consonant{1}, "ed").Try(Word{0,-3}),
+  FilterBy("EndsWith", Consonant{1}, "ed").Try(Word{0,-1}),
+  FilterBy("EndsWith", "ed").Try(Word{0,-2}),
+}
+
+func handleSuffixEd(word string) (string, error) {
+  for _, rule := range textProcessorEdRules {
+    applies, normalizedRunes := rule.Rule(word)
+    if applies {
+      return string(normalizedRunes), nil
+    }
+  }
+
+  return word, nil
 }
 
 func TestHandleSuffixEd(t *testing.T) {
   fixtures := []struct {
     Word string
     Expected string
-    ExpectedBool bool
   }{
-    {"stopped", "stop", true},
-    {"died", "die", true},
-    {"lied", "lie", true},
-    {"accoladed", "accolade", true},
-    {"compacted", "compact", true},
-    {"phoned", "phone", true},
-    {"danced", "dance", true},
-    {"bleed", "", false},
-    {"zed", "", false},
+    {"stopped", "stop"},
+    {"died", "die"},
+    {"lied", "lie"},
+    {"accoladed", "accolade"},
+    {"compacted", "compact"},
+    {"phoned", "phone"},
+    {"danced", "dance"},
+    {"bleed", "bleed"},
+    {"zed", "zed"},
   }
 
   for _, fixture := range fixtures {
-    inputRune := getRunesFromString(fixture.Word)
-    expectedRune := getRunesFromString(fixture.Expected)
-
-    boolResult, result := handleSuffixEd(inputRune)
-    if boolResult != fixture.ExpectedBool {
-      t.Errorf("Did not expect boolean result. Expected '%t' received '%t'.",
-        fixture.ExpectedBool, boolResult)
+    result, err := handleSuffixIng(fixture.Word)
+    if err != nil {
+      t.Errorf("Did not expect handleSuffixIng to throw an error: %s", err.Error())
     }
 
-    if !reflect.DeepEqual(result, expectedRune) {
+    if !reflect.DeepEqual(result, fixture.Expected) {
       t.Errorf("Did not obtain expected string. Expected '%q' received '%q'.",
-        expectedRune, result)
-    }
-  }
-}
-
-func TestImproperWords(t *testing.T) {
-  fixtures := []struct {
-    Word string
-    Expected string
-    ExpectedBool bool
-  }{
-    {"began", "begin", true},
-    {"mice", "mouse", true},
-  }
-
-  for _, fixture := range fixtures {
-    inputRune := getRunesFromString(fixture.Word)
-    expectedRune := getRunesFromString(fixture.Expected)
-
-    boolResult, result := handleImproperWord(inputRune)
-    if boolResult != fixture.ExpectedBool {
-      t.Errorf("Did not expect boolean result. Expected '%t' received '%t'.",
-        fixture.ExpectedBool, boolResult)
-    }
-
-    if !reflect.DeepEqual(result, expectedRune) {
-      t.Errorf("Did not obtain expected string. Expected '%q' received '%q'.",
-        expectedRune, result)
+        fixture.Expected, result)
     }
   }
 }
