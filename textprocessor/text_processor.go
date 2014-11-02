@@ -37,18 +37,18 @@ func (w Word) GetSlice(word string) ([]rune) {
 
   var endIndex int
   if w.EndIndex < 0 {
-    endIndex = len(wordRunes) + w.EndIndex + 1
+    endIndex = len(wordRunes) + w.EndIndex
   } else {
     endIndex = w.EndIndex
   }
 
   if endIndex < 0 {
-    log.Fatal(`Specified an EndIndex on a word that cannot exist. You specified
+    log.Fatalf(`Specified an EndIndex on a word that cannot exist. You specified
                '%d', but the word only has length %d`, w.EndIndex, len(wordRunes))
   }
 
   if startIndex > endIndex {
-    log.Fatal(`Specified a StartIndex '%d' on a word that is greater than the
+    log.Fatalf(`Specified a StartIndex '%d' on a word that is greater than the
               EndIndex '%d' (for word of length '%d').`,
               w.StartIndex, w.EndIndex, len(wordRunes))
   }
@@ -180,7 +180,7 @@ func (d DefaultIntermediateProcessingResult) FilterBy(filterType string, args ..
       return true
     }
   default:
-    log.Fatal(`Specified an invalid filter type '%s'.`, filterType)
+    log.Fatalf(`Specified an invalid filter type '%s'.`, filterType)
   }
 
   var filterFunctions []FilterFunction

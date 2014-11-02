@@ -73,7 +73,30 @@ func TestNormalizedWord(t *testing.T) {
 }
 
 func TestGetSlice(t *testing.T) {
-  // TODO: implement
+  fixtures := []struct {
+    Word string
+    StartIndex int
+    EndIndex int
+    Expected string
+  }{
+    {"mayo", 0, -1, "may"},
+    {"blog-ger", 0, -3, "blog-"},
+    {"fiver", 1, -1, "ive"},
+    {"blob", 3, 3, ""},
+    {"", 0, 0, ""},
+    {"nobjobclob", 3, 6, "job"},
+    {"computer", 0, 8, "computer"},
+  }
+
+  for _, fixture := range fixtures {
+    wordObj := Word{fixture.StartIndex, fixture.EndIndex}
+    sliceRunes := wordObj.GetSlice(fixture.Word)
+
+    if !reflect.DeepEqual(fixture.Expected, string(sliceRunes)) {
+      t.Errorf("Non-matching result. Expected '%s', but obtained '%q'",
+        fixture.Expected, sliceRunes)
+    }
+  }
 }
 
 /*
