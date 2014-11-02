@@ -1,10 +1,7 @@
 package textprocessor
 
 import (
-  "strings"
-  "fmt"
   "log"
-  "reflect"
   "unicode/utf8"
 )
 
