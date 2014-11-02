@@ -72,6 +72,10 @@ func TestNormalizedWord(t *testing.T) {
   }
 }
 
+func TestGetSlice(t *testing.T) {
+  // TODO: implement
+}
+
 /*
 Testing for `ing` rules
 */
