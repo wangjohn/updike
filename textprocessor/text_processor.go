@@ -37,7 +37,7 @@ func (w Word) GetSlice(word string) ([]rune) {
 
   var endIndex int
   if w.EndIndex < 0 {
-    endIndex = len(wordRunes) - w.EndIndex + 1
+    endIndex = len(wordRunes) + w.EndIndex + 1
   } else {
     endIndex = w.EndIndex
   }
