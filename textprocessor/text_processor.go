@@ -4,6 +4,7 @@ import (
   "log"
   "strings"
   "unicode/utf8"
+  "reflect"
 )
 
 var vowels = map[rune]bool {
@@ -168,7 +169,7 @@ func (d DefaultIntermediateProcessingResult) FilterBy(filterType string, args ..
         log.Fatal("Must use a single argument for 'LongerThan' filter type.")
       }
       length, validInt := args[0].(int)
-      if validInt {
+      if !validInt {
         log.Fatal("Must use an integer as the argument for 'LongerThan' filter type.")
       }
       return len(wordRunes) > length
@@ -187,17 +188,20 @@ func (d DefaultIntermediateProcessingResult) FilterBy(filterType string, args ..
       for i, argument := range args {
         wordIndex := len(wordRunes) - i - 1
 
-        switch arg := argument.(type) {
-        case Consonant:
+        switch reflect.TypeOf(argument).Name() {
+        case "Consonant":
+          arg, _ := argument.(Consonant)
           consonantMapping[arg.Index] = append(consonantMapping[arg.Index], wordIndex)
-        case Vowel:
+        case "Vowel":
+          arg, _ := argument.(Vowel)
           vowelMapping[arg.Index] = append(vowelMapping[arg.Index], wordIndex)
-        case rune:
+        case "rune":
+          arg, _ := argument.(rune)
           if wordRunes[wordIndex] != arg {
             return false
           }
         default:
-          log.Fatal("Invalid argument type '%T' for 'EndsWith' filter type.", argument)
+          log.Fatalf("Invalid argument type '%T' for 'EndsWith' filter type. Argument is: %s", argument, argument)
         }
       }
 
@@ -237,9 +241,7 @@ func (d DefaultIntermediateProcessingResult) FilterBy(filterType string, args ..
     log.Fatalf(`Specified an invalid filter type '%s'.`, filterType)
   }
 
-  var filterFunctions []FilterFunction
-  filterFunctions = append(filterFunctions, d.FilterFunctions...)
-  filterFunctions = append(filterFunctions, currentFilterFunction)
+  d.FilterFunctions = append(d.FilterFunctions, currentFilterFunction)
 
   return d
 }
