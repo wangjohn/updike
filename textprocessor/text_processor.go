@@ -4,7 +4,6 @@ import (
   "log"
   "strings"
   "unicode/utf8"
-  "reflect"
 )
 
 var vowels = map[rune]bool {
@@ -148,7 +147,7 @@ calling FilterBy on the resulting struct.
 func FilterBy(filterType string, args ...interface{}) (IntermediateProcessingResult) {
   filterFunctions := []FilterFunction{}
   processingResult := DefaultIntermediateProcessingResult{filterFunctions}
-  return processingResult.FilterBy(filterType, args)
+  return processingResult.FilterBy(filterType, args...)
 }
 
 /*
@@ -175,6 +174,21 @@ func (d DefaultIntermediateProcessingResult) FilterBy(filterType string, args ..
       return len(wordRunes) > length
     }
   case "EndsWith":
+    // Convert all string arguments into individual rune arguments
+    adjustedArgs := make([]interface{}, 0)
+    for _, arg := range args {
+      stringArg, isValidString := arg.(string)
+      if isValidString {
+        stringRunes := getRunesFromString(stringArg)
+        for _, stringRune := range stringRunes {
+          adjustedArgs = append(adjustedArgs, interface{}(stringRune))
+        }
+      } else {
+        adjustedArgs = append(adjustedArgs, arg)
+      }
+    }
+    args = adjustedArgs
+
     currentFilterFunction = func(word string) (bool) {
       wordRunes := getRunesFromString(word)
 
@@ -188,20 +202,17 @@ func (d DefaultIntermediateProcessingResult) FilterBy(filterType string, args ..
       for i, argument := range args {
         wordIndex := len(wordRunes) - i - 1
 
-        switch reflect.TypeOf(argument).Name() {
-        case "Consonant":
-          arg, _ := argument.(Consonant)
-          consonantMapping[arg.Index] = append(consonantMapping[arg.Index], wordIndex)
-        case "Vowel":
-          arg, _ := argument.(Vowel)
-          vowelMapping[arg.Index] = append(vowelMapping[arg.Index], wordIndex)
-        case "rune":
-          arg, _ := argument.(rune)
+        switch arg := argument.(type) {
+        case rune:
           if wordRunes[wordIndex] != arg {
             return false
           }
+        case Consonant:
+          consonantMapping[arg.Index] = append(consonantMapping[arg.Index], wordIndex)
+        case Vowel:
+          vowelMapping[arg.Index] = append(vowelMapping[arg.Index], wordIndex)
         default:
-          log.Fatalf("Invalid argument type '%T' for 'EndsWith' filter type. Argument is: %s", argument, argument)
+          log.Printf("Invalid argument type '%T' for 'EndsWith' filter type. Argument is: %s", argument, argument)
         }
       }
 
