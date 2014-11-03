@@ -126,7 +126,8 @@ Testing for ING suffix rules
 var textProcessorIngRules = []ProcessingRule{
   FilterBy("EndsWith", Consonant{1}, Consonant{1}, "ing").FilterBy("LongerThan", 5).Try(Word{0,-4}),
   FilterBy("EndsWith", "ying").FilterBy("LongerThan", 4).Try(Word{0,-4}, 'i', 'e'),
-  FilterBy("EndsWith", "ing").FilterBy("LongerThan", 3).Try(Word{0,-3}),
+  FilterBy("EndsWith", Consonant{1}, "ing").FilterBy("LongerThan", 4).Try(Word{0,-3}, 'e'),
+  FilterBy("EndsWith", "ing").FilterBy("LongerThan", 4).Try(Word{0,-3}),
 }
 
 func handleSuffixIng(word string) (string, error) {

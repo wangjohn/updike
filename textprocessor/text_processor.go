@@ -200,7 +200,7 @@ func (d DefaultIntermediateProcessingResult) FilterBy(filterType string, args ..
       consonantMapping := make(map[int][]int)
       vowelMapping := make(map[int][]int)
       for i, argument := range args {
-        wordIndex := len(wordRunes) - i - 1
+        wordIndex := len(wordRunes) - len(args) + i
 
         switch arg := argument.(type) {
         case rune:
@@ -220,7 +220,7 @@ func (d DefaultIntermediateProcessingResult) FilterBy(filterType string, args ..
         var requiredLetter rune
         for j, wordIndex := range consonantMapping[consonantIndex] {
           currentLetter := wordRunes[wordIndex]
-          if !IsVowel(currentLetter) {
+          if IsVowel(currentLetter) {
             return false
           }
           if j == 0 {
