@@ -2,6 +2,7 @@ package tfidf
 
 import (
   "database/sql"
+  "math"
 )
 
 type TFIDF interface {
@@ -31,6 +32,54 @@ CREATE TABLE IF NOT EXISTS tfidf_pairs (
   document integer
 )
 `
+
+var totalDocuments = -1
+
+func (p PersistentTFIDF) TermFrequency(word string) (float64, error) {
+  var tf float64
+  err := p.SQLDatabase.QueryRow(
+    `SELECT occurrences FROM tfidf
+     WHERE word=?`, word).Scan(&tf)
+  if err != nil {
+    return 0.0, err
+  }
+
+  return tf, nil
+}
+
+func (p PersistentTFIDF) InverseDocumentFrequency(word string) (float64, error) {
+  var idf float64
+  err := p.SQLDatabase.QueryRow(
+    `SELECT unique_documents FROM tfidf
+    WHERE word=?`, word).Scan(&idf)
+  if err != nil {
+    return 0.0, err
+  }
+
+  if totalDocuments == -1 {
+    err = p.SQLDatabase.QueryRow(
+      `SELECT COUNT(DISTINCT document) FROM tfidf_paris`).Scan(&totalDocuments)
+    if err != nil {
+      return 0.0, err
+    }
+  }
+
+  return math.Log10(totalDocuments / (1 + idf)), nil
+}
+
+func (p PersistentTFIDF) TFIDFScore(word string) (float64, error) {
+  tf, err := p.TermFrequency(word)
+  if err != nil {
+    return 0.0, err
+  }
+
+  idf, err := p.InverseDocumentFrequency(word)
+  if err != nil {
+    return 0.0, err
+  }
+
+  return tf * idf, nil
+}
 
 func (p PersistentTFIDF) Store(word string, occurrences, documentId int) (error) {
   var isNewDocument, isNewWord bool
