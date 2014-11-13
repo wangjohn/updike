@@ -7,9 +7,9 @@ import (
 
 type TFIDF interface {
   Store(word string) (error)
-  TermFrequency(word string) (float64, error)
+  TermFrequency(word string, documentId int) (float64, error)
   InverseDocumentFrequency(word string) (float64, error)
-  TFIDFScore(word string) (float64, error)
+  TFIDFScore(word string, documentId int) (float64, error)
 }
 
 type PersistentTFIDF struct {
@@ -17,58 +17,66 @@ type PersistentTFIDF struct {
 }
 
 var persistentSqlSchema = `
-CREATE TABLE IF NOT EXISTS tfidf (
+CREATE TABLE IF NOT EXISTS word_document_pairs (
   id bigserial PRIMARY KEY,
   word text,
-  occurrences integer,
-  max_occurrences integer,
-  unique_documents integer
+  freq integer,
+  doc_max_word_freq integer,
+  document bigserial,
 );
 
-CREATE TABLE IF NOT EXISTS tfidf_pairs (
+CREATE TABLE IF NOT EXISTS document_frequency (
   id bigserial PRIMARY KEY,
   word text,
-  occurrences integer,
-  document integer
-)
+  unique_documents integer,
+);
 `
 
-var totalDocuments = -1
-
-func (p PersistentTFIDF) TermFrequency(word string) (float64, error) {
-  var tf float64
+func (p PersistentTFIDF) TermFrequency(word string, documentId int) (float64, error) {
+  var freq, docMaxWordFreq float64
   err := p.SQLDatabase.QueryRow(
-    `SELECT occurrences FROM tfidf
-     WHERE word=?`, word).Scan(&tf)
+    `SELECT freq, doc_max_word_freq FROM word_document_pairs
+     WHERE word=?
+     AND document=?`, word, documentId).Scan(&freq, &docMaxWordFreq)
   if err != nil {
     return 0.0, err
   }
 
-  return tf, nil
+  return tfFunc(freq, docMaxWordFreq), nil
 }
 
+func tfFunc(frequency, docMaxWordFrequency int) float64 {
+  return 0.5 + (0.5 * frequency) / docMaxWordFrequency
+}
+
+var totalDocs = -1
+
 func (p PersistentTFIDF) InverseDocumentFrequency(word string) (float64, error) {
-  var idf float64
+  var uniqDocs float64
   err := p.SQLDatabase.QueryRow(
-    `SELECT unique_documents FROM tfidf
-    WHERE word=?`, word).Scan(&idf)
+    `SELECT unique_documents FROM document_frequency
+    WHERE word=?`, word).Scan(&uniqDocs)
   if err != nil {
     return 0.0, err
   }
 
-  if totalDocuments == -1 {
+  if totalDocs == -1 {
     err = p.SQLDatabase.QueryRow(
-      `SELECT COUNT(DISTINCT document) FROM tfidf_paris`).Scan(&totalDocuments)
+      `SELECT COUNT(DISTINCT document) FROM word_document_pairs`).Scan(&totalDocs)
     if err != nil {
       return 0.0, err
     }
   }
 
-  return math.Log10(totalDocuments / (1 + idf)), nil
+  return idfFunc(uniqDocs, totalDocs), nil
 }
 
-func (p PersistentTFIDF) TFIDFScore(word string) (float64, error) {
-  tf, err := p.TermFrequency(word)
+func idfFunc(uniqDocs int, docs int) (float64) {
+  return math.Log10(docs / (1 + uniqDocs))
+}
+
+func (p PersistentTFIDF) TFIDFScore(word string, documentId int) (float64, error) {
+  tf, err := p.TermFrequency(word, documentId)
   if err != nil {
     return 0.0, err
   }
@@ -81,100 +89,78 @@ func (p PersistentTFIDF) TFIDFScore(word string) (float64, error) {
   return tf * idf, nil
 }
 
-func (p PersistentTFIDF) Store(word string, occurrences, documentId int) (error) {
-  var isNewDocument, isNewWord bool
-  var pairId int
-  err := p.SQLDatabase.QueryRow(
-   `SELECT id FROM tfidf_pairs
+func (p PersistentTFIDF) Store(word string, occurrences, docMaxWordOccurrences, documentId int) (error) {
+  var isNewDocument bool, id int
+  wordQueryErr := p.SQLDatabase.QueryRow(
+   `SELECT id FROM word_document_pairs
     WHERE word='?'
-    AND document=?`, word, documentId).Scan(&pairId)
+    AND document=?`, word, documentId).Scan(&id)
 
-  if err != nil {
-    return err
-  }
-
-  if err == sql.ErrNoRows {
+  if wordQueryErr == sql.ErrNoRows {
     isNewDocument = true
     insertPairQuery := fmt.Sprintf(
-     `INSERT INTO tfidf_pairs(
-        word, occurrences, document)
-      VALUES ('%s', %d, %d)
+     `INSERT INTO word_document_pairs(
+        word, freq, doc_max_word_freq, document)
+      VALUES ('%s', %d, %d, %d)
       RETURNING id`,
       word,
       occurrences,
+      docMaxWordOccurrences,
       documentId)
-    err = p.SQLDatabase.QueryRow(insertPairQuery).Scan(&pairId)
-    if err != nil {
-      return err
+    wordInsErr = p.SQLDatabase.QueryRow(insertPairQuery).Scan(&id)
+    if wordInsErr != nil {
+      return wordInsErr
     }
-  } else {
+  } else if wordQueryErr == nil {
     isNewDocument = false
-    _, err := p.SQLDatabase.Exec(
-     `UPDATE tfidf_pairs
-      SET occurrences=?
+    _, wordUpdErr := p.SQLDatabase.Exec(
+     `UPDATE word_document_pairs
+      SET freq=?
+      AND doc_max_word_freq=?
       WHERE word='?'
       AND document=?`,
       occurrences,
+      docMaxWordOccurrences,
       word,
       documentId)
-    if err != nil {
-      return err
+    if wordUpdErr != nil {
+      return wordUpdErr
     }
+  } else {
+    return wordQueryErr
   }
 
-  var tfidfId, curOccurrences, curMaxOccurrences, curUniqueDocuments int
-  err = p.SQLDatabase.QueryRow(
-   `SELECT id, occurrences, max_occurrences, unique_documents FROM tfidf
-    WHERE word='?'`, word)
-    .Scan(&tfidfIdf, &curOccurrences, &curMaxOccurrences, &curUniqueDocuments)
+  // Update the number of unique documents
+  var docFreqId, uniqDocs int
+  docFreqQueryErr := p.SQLDatabase.QueryRow(
+    `SELECT id, unique_documents FROM document_frequency
+     WHERE word='?'`, word).Scan(&docFreqId, &uniqDocs)
 
-  if err != nil {
-    return err
+  if docFreqQueryErr == sql.ErrNoRows {
+    docFreqInsErr := p.SQLDatabase.QueryRow(
+     `INSERT INTO document_frequency(
+        word, unique_documents)
+      VALUES ('%s', %d)
+      RETURNING id, unique_documents`, word, 0).Scan(&docFreqId, &uniqDocs)
+
+    if docFreqInsErr != nil {
+      return docFreqInsErr
+    }
+  } else if docFreqQueryErr != nil {
+    return docFreqQueryErr
   }
-  isNewWord = (err == sql.ErrNoRows)
 
-  var adjOccurrences, adjMaxOccurrences, adjUniqueDocuments int
+  var updatedUniqDocs int
   if isNewDocument {
-    adjOccurrences = curOccurrences + occurrences
-    adjMaxOccurrences = max(occurrences, curMaxOccurrences)
-    adjUniqueDocuments = curUniqueDocuments + 1
+    updatedUniqDocs = uniqDocs + 1
   } else {
-    err = p.SQLDatabase.QueryRow(
-     `SELECT SUM(occurrences), MAX(occurrences), COUNT(*)
-      FROM tfidf_pairs
-      WHERE word='?'`,
-      word).Scan(&adjOccurrences, adjMaxOccurrences, adjUniqueDocuments)
-
-    if err != nil {
-      return err
-    }
+    updatedUniqDocs = uniqDocs
   }
 
-  if isNewWord {
-    insertTfidfQuery := fmt.Sprintf(
-     `INSERT INTO tfidf(
-        word, occurrences, max_occurrences, unique_documents)
-      VALUES ('%s', %d, %d, %d)`,
-      word,
-      adjOccurrences,
-      adjMaxOccurrences,
-      adjUniqueDocuments)
-    err = p.SQLDatabase.QueryRow(insertTfidfQuery)
-  } else {
-    err = p.SQLDatabase.Exec(
-     `UPDATE tfidf
-      SET occurrences=?, max_occurrences=?, unique_documents=?
-      WHERE word='?'`,
-      adjOccurrences,
-      adjMaxOccurrences,
-      adjUniqueDocuments,
-      word)
-  }
+  _, err = p.SQLDatabase.Exec(
+    `UPDATE document_frequency
+     SET unique_documents=?
+     WHERE id=?`, docFreqId, updatedUniqDocs)
 
-  if err != nil {
-    return err
-  }
-
-  return nil
+  return err
 }
-
