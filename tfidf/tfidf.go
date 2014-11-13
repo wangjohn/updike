@@ -89,7 +89,10 @@ func (p PersistentTFIDF) InverseDocumentFrequency(word string) (float64, error) 
   err = p.SQLDatabase.QueryRow(
     `SELECT unique_documents FROM document_frequency
     WHERE word=$1`, word).Scan(&uniqDocs)
-  if err != nil {
+
+  if err == sql.ErrNoRows {
+    uniqDocs = 0
+  } else if err != nil {
     return 0.0, err
   }
 
