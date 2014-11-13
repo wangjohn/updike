@@ -39,7 +39,7 @@ func (p PersistentTFIDF) TermFrequency(word string, documentId int) (float64, er
     return 0.0, err
   }
 
-  var freq, docMaxWordFreq float64
+  var freq, docMaxWordFreq int
   err = p.SQLDatabase.QueryRow(
     `SELECT freq, doc_max_word_freq FROM word_document_pairs
      WHERE word=?
@@ -52,7 +52,7 @@ func (p PersistentTFIDF) TermFrequency(word string, documentId int) (float64, er
 }
 
 func tfFunc(frequency, docMaxWordFrequency int) float64 {
-  return 0.5 + (0.5 * frequency) / docMaxWordFrequency
+  return 0.5 + (0.5 * float64(frequency)) / float64(docMaxWordFrequency)
 }
 
 var totalDocs = -1
@@ -63,7 +63,7 @@ func (p PersistentTFIDF) InverseDocumentFrequency(word string) (float64, error) 
     return 0.0, err
   }
 
-  var uniqDocs float64
+  var uniqDocs int
   err = p.SQLDatabase.QueryRow(
     `SELECT unique_documents FROM document_frequency
     WHERE word=?`, word).Scan(&uniqDocs)
@@ -83,7 +83,7 @@ func (p PersistentTFIDF) InverseDocumentFrequency(word string) (float64, error) 
 }
 
 func idfFunc(docs, totDocs int) (float64) {
-  return math.Log10(totDocs / (1 + docs))
+  return math.Log10(float64(totDocs) / (1.0 + float64(docs)))
 }
 
 func (p PersistentTFIDF) TFIDFScore(word string, documentId int) (float64, error) {
@@ -120,7 +120,7 @@ func (p PersistentTFIDF) Store(word string, occurrences, docMaxWordOccurrences, 
 
   if wordQueryErr == sql.ErrNoRows {
     isNewDocument = true
-    insertPairQuery := fmt.Sprintf(
+    wordInsErr := p.SQLDatabase.QueryRow(
      `INSERT INTO word_document_pairs(
         word, freq, doc_max_word_freq, document)
       VALUES ('%s', %d, %d, %d)
@@ -128,8 +128,7 @@ func (p PersistentTFIDF) Store(word string, occurrences, docMaxWordOccurrences, 
       word,
       occurrences,
       docMaxWordOccurrences,
-      documentId)
-    wordInsErr = p.SQLDatabase.QueryRow(insertPairQuery).Scan(&id)
+      documentId).Scan(&id)
     if wordInsErr != nil {
       return wordInsErr
     }
