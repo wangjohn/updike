@@ -7,7 +7,7 @@ import (
 
 const (
   testDriverName = "postgres"
-  testDataSourceName = "host=localhost user=philarios dbname=philarios sslmode=disable"
+  testDataSourceName = "host=localhost user=philarios dbname=philarios_storage_test sslmode=disable"
 )
 
 func setupDatabase() (Storage, error) {
