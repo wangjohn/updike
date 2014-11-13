@@ -65,10 +65,8 @@ func TestTermFrequency(t *testing.T) {
   }{
     {"hello", 1, 0.674418605},
     {"hello", 2, 0.51},
-    {"hello", 3, 0.5},
     {"tango", 2, 0.984848485},
     {"blend", 1, 0.515},
-    {"blahd", 0, 0.5},
     {"nonex", 1, 0.5},
     {"watev", 2, 0.5},
   }

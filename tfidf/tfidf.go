@@ -4,6 +4,7 @@ import (
   _ "github.com/lib/pq"
   "database/sql"
   "math"
+  "fmt"
 )
 
 type TFIDF interface {
@@ -50,7 +51,22 @@ func (p PersistentTFIDF) TermFrequency(word string, documentId int) (float64, er
     `SELECT freq, doc_max_word_freq FROM word_document_pairs
      WHERE word=$1
      AND document=$2`, word, documentId).Scan(&freq, &docMaxWordFreq)
-  if err != nil {
+
+  if err == sql.ErrNoRows {
+    // We don't have that word, document pair, so just set freq to zero.
+    freq = 0
+
+    findMaxFreqErr := p.SQLDatabase.QueryRow(
+      `SELECT doc_max_word_freq FROM word_document_pairs
+       WHERE document=$1
+       LIMIT 1`, documentId).Scan(&docMaxWordFreq)
+
+    if findMaxFreqErr == sql.ErrNoRows {
+      return 0.0, fmt.Errorf("Document with id=%v does not exist", documentId)
+    } else if findMaxFreqErr != nil {
+      return 0.0, findMaxFreqErr
+    }
+  } else if err != nil {
     return 0.0, err
   }
 
