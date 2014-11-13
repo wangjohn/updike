@@ -48,8 +48,8 @@ func (p PersistentTFIDF) TermFrequency(word string, documentId int) (float64, er
   var freq, docMaxWordFreq int
   err = p.SQLDatabase.QueryRow(
     `SELECT freq, doc_max_word_freq FROM word_document_pairs
-     WHERE word=?
-     AND document=?`, word, documentId).Scan(&freq, &docMaxWordFreq)
+     WHERE word=$1
+     AND document=$2`, word, documentId).Scan(&freq, &docMaxWordFreq)
   if err != nil {
     return 0.0, err
   }
@@ -72,7 +72,7 @@ func (p PersistentTFIDF) InverseDocumentFrequency(word string) (float64, error) 
   var uniqDocs int
   err = p.SQLDatabase.QueryRow(
     `SELECT unique_documents FROM document_frequency
-    WHERE word=?`, word).Scan(&uniqDocs)
+    WHERE word=$1`, word).Scan(&uniqDocs)
   if err != nil {
     return 0.0, err
   }
@@ -121,15 +121,15 @@ func (p PersistentTFIDF) Store(word string, occurrences, docMaxWordOccurrences, 
   var id int
   wordQueryErr := p.SQLDatabase.QueryRow(
    `SELECT id FROM word_document_pairs
-    WHERE word='?'
-    AND document=?`, word, documentId).Scan(&id)
+    WHERE word=$1
+    AND document=$2`, word, documentId).Scan(&id)
 
   if wordQueryErr == sql.ErrNoRows {
     isNewDocument = true
     wordInsErr := p.SQLDatabase.QueryRow(
      `INSERT INTO word_document_pairs(
         word, freq, doc_max_word_freq, document)
-      VALUES ('%s', %d, %d, %d)
+      VALUES ($1, $2, $3, $3)
       RETURNING id`,
       word,
       occurrences,
@@ -142,10 +142,10 @@ func (p PersistentTFIDF) Store(word string, occurrences, docMaxWordOccurrences, 
     isNewDocument = false
     _, wordUpdErr := p.SQLDatabase.Exec(
      `UPDATE word_document_pairs
-      SET freq=?
-      AND doc_max_word_freq=?
-      WHERE word='?'
-      AND document=?`,
+      SET freq=$1
+      AND doc_max_word_freq=$2
+      WHERE word=$3
+      AND document=$4`,
       occurrences,
       docMaxWordOccurrences,
       word,
@@ -161,13 +161,13 @@ func (p PersistentTFIDF) Store(word string, occurrences, docMaxWordOccurrences, 
   var docFreqId, uniqDocs int
   docFreqQueryErr := p.SQLDatabase.QueryRow(
     `SELECT id, unique_documents FROM document_frequency
-     WHERE word='?'`, word).Scan(&docFreqId, &uniqDocs)
+     WHERE word=$1`, word).Scan(&docFreqId, &uniqDocs)
 
   if docFreqQueryErr == sql.ErrNoRows {
     docFreqInsErr := p.SQLDatabase.QueryRow(
      `INSERT INTO document_frequency(
         word, unique_documents)
-      VALUES ('%s', %d)
+      VALUES ($1, $2)
       RETURNING id, unique_documents`, word, 0).Scan(&docFreqId, &uniqDocs)
 
     if docFreqInsErr != nil {
@@ -186,8 +186,8 @@ func (p PersistentTFIDF) Store(word string, occurrences, docMaxWordOccurrences, 
 
   _, err = p.SQLDatabase.Exec(
     `UPDATE document_frequency
-     SET unique_documents=?
-     WHERE id=?`, docFreqId, updatedUniqDocs)
+     SET unique_documents=$1
+     WHERE id=$2`, docFreqId, updatedUniqDocs)
 
   return err
 }

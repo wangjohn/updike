@@ -3,11 +3,14 @@ package tfidf
 import (
   "database/sql"
   "testing"
+  "math"
 )
 
 const (
   testDriverName = "postgres"
   testDataSourceName = "host=localhost user=philarios dbname=philarios_tfidf_test sslmode=disable"
+
+  floatEqualThresh = 0.00001
 )
 
 func setupDatabase() (*PersistentTFIDF, *sql.DB, error) {
@@ -76,8 +79,8 @@ func TestTermFrequency(t *testing.T) {
       t.Errorf("Should not have thrown an error for term frequency: err=%v", err)
     }
 
-    if resultTF != fixture.ExpectedTF {
-      t.Error("Received unexpected term frequency value: result=%v, expected=%v",
+    if math.Abs(resultTF - fixture.ExpectedTF) > floatEqualThresh {
+      t.Errorf("Received unexpected term frequency value: result=%v, expected=%v",
         resultTF, fixture.ExpectedTF)
     }
   }
