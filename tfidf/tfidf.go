@@ -10,6 +10,7 @@ type TFIDF interface {
   TermFrequency(word string, documentId int) (float64, error)
   InverseDocumentFrequency(word string) (float64, error)
   TFIDFScore(word string, documentId int) (float64, error)
+  NormalizeWord(word string) (string, error)
 }
 
 type PersistentTFIDF struct {
@@ -33,8 +34,13 @@ CREATE TABLE IF NOT EXISTS document_frequency (
 `
 
 func (p PersistentTFIDF) TermFrequency(word string, documentId int) (float64, error) {
+  word, err := p.NormalizeWord(word)
+  if err != nil {
+    return 0.0, err
+  }
+
   var freq, docMaxWordFreq float64
-  err := p.SQLDatabase.QueryRow(
+  err = p.SQLDatabase.QueryRow(
     `SELECT freq, doc_max_word_freq FROM word_document_pairs
      WHERE word=?
      AND document=?`, word, documentId).Scan(&freq, &docMaxWordFreq)
@@ -52,8 +58,13 @@ func tfFunc(frequency, docMaxWordFrequency int) float64 {
 var totalDocs = -1
 
 func (p PersistentTFIDF) InverseDocumentFrequency(word string) (float64, error) {
+  word, err := p.NormalizeWord(word)
+  if err != nil {
+    return 0.0, err
+  }
+
   var uniqDocs float64
-  err := p.SQLDatabase.QueryRow(
+  err = p.SQLDatabase.QueryRow(
     `SELECT unique_documents FROM document_frequency
     WHERE word=?`, word).Scan(&uniqDocs)
   if err != nil {
@@ -76,6 +87,11 @@ func idfFunc(uniqDocs int, docs int) (float64) {
 }
 
 func (p PersistentTFIDF) TFIDFScore(word string, documentId int) (float64, error) {
+  word, err := p.NormalizeWord(word)
+  if err != nil {
+    return 0.0, err
+  }
+
   tf, err := p.TermFrequency(word, documentId)
   if err != nil {
     return 0.0, err
@@ -90,6 +106,11 @@ func (p PersistentTFIDF) TFIDFScore(word string, documentId int) (float64, error
 }
 
 func (p PersistentTFIDF) Store(word string, occurrences, docMaxWordOccurrences, documentId int) (error) {
+  word, err := p.NormalizeWord(word)
+  if err != nil {
+    return err
+  }
+
   var isNewDocument bool, id int
   wordQueryErr := p.SQLDatabase.QueryRow(
    `SELECT id FROM word_document_pairs
@@ -163,4 +184,8 @@ func (p PersistentTFIDF) Store(word string, occurrences, docMaxWordOccurrences, 
      WHERE id=?`, docFreqId, updatedUniqDocs)
 
   return err
+}
+
+func (p PersistentTFIDF) NormalizeWord(word string) (string, error) {
+  return word, nil
 }
