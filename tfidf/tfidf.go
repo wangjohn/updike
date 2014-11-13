@@ -82,8 +82,8 @@ func (p PersistentTFIDF) InverseDocumentFrequency(word string) (float64, error) 
   return idfFunc(uniqDocs, totalDocs), nil
 }
 
-func idfFunc(uniqDocs int, docs int) (float64) {
-  return math.Log10(docs / (1 + uniqDocs))
+func idfFunc(docs, totDocs int) (float64) {
+  return math.Log10(totDocs / (1 + docs))
 }
 
 func (p PersistentTFIDF) TFIDFScore(word string, documentId int) (float64, error) {
