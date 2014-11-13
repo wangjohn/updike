@@ -15,7 +15,6 @@ func setupDatabase() (*PersistentTFIDF, *sql.DB, error) {
   if err != nil {
     return nil, nil, err
   }
-  defer db.Close()
 
   tfidf := PersistentTFIDF{db}
   err = clearDatabase(db)
@@ -40,8 +39,12 @@ func TestTermFrequency(t *testing.T) {
   if err != nil {
     t.Errorf("Should not have thrown an error while setting up database: err=%v", err)
   }
+  err = tfidf.EnsureSchema()
+  if err != nil {
+    t.Errorf("Should not have thrown an error while ensuring schema: err=%v", err)
+  }
 
-  _, err = db.Exec(`INSERT INTO word_document_pairs i
+  _, err = db.Exec(`INSERT INTO word_document_pairs
     (word, freq, doc_max_word_freq, document) VALUES
     ('hello', 15, 43, 1),
     ('tango', 32, 33, 2),
@@ -49,7 +52,7 @@ func TestTermFrequency(t *testing.T) {
     ('blend', 3, 100, 1);`)
 
   if err != nil {
-    t.Errorf("Should not have thrown an error while setting up test database: err=%v", err)
+    t.Errorf("Should not have thrown an error while inserting test data into database: err=%v", err)
   }
 
   fixtures := []struct {

@@ -1,6 +1,7 @@
 package tfidf
 
 import (
+  _ "github.com/lib/pq"
   "database/sql"
   "math"
 )
@@ -23,15 +24,20 @@ CREATE TABLE IF NOT EXISTS word_document_pairs (
   word text,
   freq integer,
   doc_max_word_freq integer,
-  document bigserial,
+  document bigserial
 );
 
 CREATE TABLE IF NOT EXISTS document_frequency (
   id bigserial PRIMARY KEY,
   word text,
-  unique_documents integer,
+  unique_documents integer
 );
 `
+
+func (p PersistentTFIDF) EnsureSchema() (error) {
+  _, err := p.SQLDatabase.Exec(persistentSqlSchema)
+  return err
+}
 
 func (p PersistentTFIDF) TermFrequency(word string, documentId int) (float64, error) {
   word, err := p.NormalizeWord(word)
