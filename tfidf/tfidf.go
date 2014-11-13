@@ -111,7 +111,8 @@ func (p PersistentTFIDF) Store(word string, occurrences, docMaxWordOccurrences, 
     return err
   }
 
-  var isNewDocument bool, id int
+  var isNewDocument bool
+  var id int
   wordQueryErr := p.SQLDatabase.QueryRow(
    `SELECT id FROM word_document_pairs
     WHERE word='?'
