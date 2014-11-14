@@ -120,6 +120,7 @@ func TestInverseDocumentFrequency(t *testing.T) {
     {"blend", 0.0},
     {"suggarrrr", 0.3010299956},
     {"fiveras", 0.3010299956},
+    {"not in dict", 0.3010299956},
   }
 
   for _, fixture := range fixtures {
@@ -131,6 +132,58 @@ func TestInverseDocumentFrequency(t *testing.T) {
     if math.Abs(resultIDF - fixture.ExpectedIDF) > floatEqualThresh {
       t.Errorf("Received unexpected term frequency value: result=%v, expected=%v",
         resultIDF, fixture.ExpectedIDF)
+    }
+  }
+}
+
+func TestTFIDF(t *testing.T) {
+  tfidf, db, err := setupDatabase()
+  defer clearDatabase(db)
+  if err != nil {
+    t.Errorf("Should not have thrown an error while setting up database: err=%v", err)
+  }
+
+  _, err = db.Exec(`
+    INSERT INTO word_document_pairs
+    (word, freq, doc_max_word_freq, document) VALUES
+    ('hello', 15, 43, 1),
+    ('tango', 32, 33, 2),
+    ('hello', 1, 50, 2),
+    ('blend', 3, 100, 1);
+
+    INSERT INTO document_frequency
+    (word, unique_documents) VALUES
+    ('hello', 2),
+    ('tango', 1),
+    ('blend', 1);
+  `)
+
+  if err != nil {
+    t.Errorf("Should not have thrown an error while inserting test data into database: err=%v", err)
+  }
+
+  fixtures := []struct {
+    Word string
+    DocumentId int
+    ExpectedScore float64
+  }{
+    {"hello", 1, -0.118759221},
+    {"hello", 2, -0.089806542},
+    {"tango", 2, 0.0},
+    {"blend", 2, 0.0},
+    {"notexistent", 1, 0.150514998},
+    {"never existed before", 1, 0.150514998},
+  }
+
+  for _, fixture := range fixtures {
+    resultScore, err := tfidf.TFIDFScore(fixture.Word, fixture.DocumentId)
+    if err != nil {
+      t.Errorf("Should not have thrown an error for inverse document frequency: err=%v", err)
+    }
+
+    if math.Abs(resultScore - fixture.ExpectedScore) > floatEqualThresh {
+      t.Errorf("Received unexpected TFIDF value: result=%v, expected=%v",
+        resultScore, fixture.ExpectedScore)
     }
   }
 }
