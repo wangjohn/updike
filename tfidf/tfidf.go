@@ -1,6 +1,8 @@
 package tfidf
 
 import (
+  "github.com/reiver/go-porterstemmer"
+
   _ "github.com/lib/pq"
   "database/sql"
   "math"
@@ -212,5 +214,5 @@ func (p PersistentTFIDF) Store(word string, occurrences, docMaxWordOccurrences, 
 }
 
 func (p PersistentTFIDF) NormalizeWord(word string) (string, error) {
-  return word, nil
+  return porterstemmer.StemString(word), nil
 }
