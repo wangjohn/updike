@@ -220,25 +220,47 @@ func TestStoreWord(t *testing.T) {
   scoreFixtures := []struct {
     Word string
     DocumentId int
+    ExpectedTF float64
+    ExpectedIDF float64
     ExpectedScore float64
   }{
-    {"hello", 1, -0.118759221},
-    {"hello", 2, -0.089806542},
-    {"tango", 2, 0.0},
-    {"blend", 2, 0.0},
-    {"notexistent", 1, 0.150514998},
-    {"never existed before", 1, 0.150514998},
+    {"hello", 1, 0.674418605, -0.176091259, -0.118759221},
+    {"hello", 2, 0.51, -0.176091259, -0.089806542},
+    {"tango", 2, 0.984848485, 0.0, 0.0},
+    {"blend", 1, 0.515, 0.0, 0.0},
+    {"notexistent", 1, 0.5, 0.3010299956, 0.150514998},
+    {"never existed before", 1, 0.5, 0.3010299956, 0.150514998},
   }
 
   for _, f := range scoreFixtures {
+    // Check the Term Frequency score
+    tfScore, err := tfidf.TermFrequency(f.Word, f.DocumentId)
+    if err != nil {
+      t.Errorf("Obtained an error while trying to get Term Frequency: err=%v", err)
+    }
+    if math.Abs(tfScore - f.ExpectedTF) > floatEqualThresh {
+      t.Errorf("Received unexpected TF value: word=%v, result=%v, expected=%v",
+        f.Word, tfScore, f.ExpectedTF)
+    }
+
+    // Check the Inverse Document Frequency score
+    idfScore, err := tfidf.InverseDocumentFrequency(f.Word)
+    if err != nil {
+      t.Errorf("Obtained an error while trying to get Term Frequency: err=%v", err)
+    }
+    if math.Abs(idfScore - f.ExpectedIDF) > floatEqualThresh {
+      t.Errorf("Received unexpected IDF value: word=%v, result=%v, expected=%v",
+        f.Word, idfScore, f.ExpectedIDF)
+    }
+
+    // Check the TFIDF score
     score, err := tfidf.TFIDFScore(f.Word, f.DocumentId)
     if err != nil {
       t.Errorf("Obtained an error while trying to get TFIDF score: err=%v", err)
     }
-
     if math.Abs(score - f.ExpectedScore) > floatEqualThresh {
-      t.Errorf("Received unexpected TFIDF value: result=%v, expected=%v",
-        score, f.ExpectedScore)
+      t.Errorf("Received unexpected TFIDF value: word=%v, result=%v, expected=%v",
+        f.Word, score, f.ExpectedScore)
     }
   }
 }

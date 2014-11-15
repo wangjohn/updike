@@ -150,7 +150,7 @@ func (p PersistentTFIDF) Store(word string, occurrences, docMaxWordOccurrences, 
     wordInsErr := p.SQLDatabase.QueryRow(
      `INSERT INTO word_document_pairs(
         word, freq, doc_max_word_freq, document)
-      VALUES ($1, $2, $3, $3)
+      VALUES ($1, $2, $3, $4)
       RETURNING id`,
       word,
       occurrences,
@@ -179,17 +179,17 @@ func (p PersistentTFIDF) Store(word string, occurrences, docMaxWordOccurrences, 
   }
 
   // Update the number of unique documents
-  var docFreqId, uniqDocs int
+  var docFreqId int
   docFreqQueryErr := p.SQLDatabase.QueryRow(
-    `SELECT id, unique_documents FROM document_frequency
-     WHERE word=$1`, word).Scan(&docFreqId, &uniqDocs)
+    `SELECT id FROM document_frequency
+     WHERE word=$1`, word).Scan(&docFreqId)
 
   if docFreqQueryErr == sql.ErrNoRows {
     docFreqInsErr := p.SQLDatabase.QueryRow(
      `INSERT INTO document_frequency(
         word, unique_documents)
       VALUES ($1, $2)
-      RETURNING id, unique_documents`, word, 0).Scan(&docFreqId, &uniqDocs)
+      RETURNING id`, word, 0).Scan(&docFreqId)
 
     if docFreqInsErr != nil {
       return docFreqInsErr
@@ -198,19 +198,15 @@ func (p PersistentTFIDF) Store(word string, occurrences, docMaxWordOccurrences, 
     return docFreqQueryErr
   }
 
-  var updatedUniqDocs int
   if isNewDocument {
-    updatedUniqDocs = uniqDocs + 1
+    _, err = p.SQLDatabase.Exec(
+      `UPDATE document_frequency
+       SET unique_documents = unique_documents + 1
+       WHERE id=$1`, docFreqId)
+    return err
   } else {
-    updatedUniqDocs = uniqDocs
+    return nil
   }
-
-  _, err = p.SQLDatabase.Exec(
-    `UPDATE document_frequency
-     SET unique_documents=$1
-     WHERE id=$2`, docFreqId, updatedUniqDocs)
-
-  return err
 }
 
 func (p PersistentTFIDF) NormalizeWord(word string) (string, error) {
