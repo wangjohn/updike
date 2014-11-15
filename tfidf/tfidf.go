@@ -10,7 +10,7 @@ import (
 )
 
 type TFIDF interface {
-  Store(word string) (error)
+  Store(word string, occurrences, docMaxWordOccurrences, documentId int) (error)
   TermFrequency(word string, documentId int) (float64, error)
   InverseDocumentFrequency(word string) (float64, error)
   TFIDFScore(word string, documentId int) (float64, error)

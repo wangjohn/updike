@@ -187,3 +187,58 @@ func TestTFIDF(t *testing.T) {
     }
   }
 }
+
+func TestStoreWord(t *testing.T) {
+  tfidf, db, err := setupDatabase()
+  defer clearDatabase(db)
+  if err != nil {
+    t.Errorf("Should not have thrown an error while setting up database: err=%v", err)
+  }
+
+  // Add words through the Store function
+  storageFixtures := []struct {
+    Word string
+    Occurrences int
+    DocMaxWordOccurrences int
+    DocumentId int
+  }{
+    {"hello", 15, 43, 1},
+    {"tango", 32, 33, 2},
+    {"hello", 1, 50, 2},
+    {"blend", 3, 100, 1},
+  }
+
+  for _, f := range storageFixtures {
+    err = tfidf.Store(f.Word, f.Occurrences, f.DocMaxWordOccurrences, f.DocumentId)
+    if err != nil {
+      t.Errorf("Obtained an error while trying to store words: err=%v", err)
+    }
+  }
+
+  // Check to make sure that the stored words have their TFIDF scores computed
+  // correctly.
+  scoreFixtures := []struct {
+    Word string
+    DocumentId int
+    ExpectedScore float64
+  }{
+    {"hello", 1, -0.118759221},
+    {"hello", 2, -0.089806542},
+    {"tango", 2, 0.0},
+    {"blend", 2, 0.0},
+    {"notexistent", 1, 0.150514998},
+    {"never existed before", 1, 0.150514998},
+  }
+
+  for _, f := range scoreFixtures {
+    score, err := tfidf.TFIDFScore(f.Word, f.DocumentId)
+    if err != nil {
+      t.Errorf("Obtained an error while trying to get TFIDF score: err=%v", err)
+    }
+
+    if math.Abs(score - f.ExpectedScore) > floatEqualThresh {
+      t.Errorf("Received unexpected TFIDF value: result=%v, expected=%v",
+        score, f.ExpectedScore)
+    }
+  }
+}
