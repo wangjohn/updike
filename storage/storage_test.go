@@ -10,6 +10,15 @@ const (
   testDataSourceName = "host=localhost user=philarios dbname=philarios_storage_test sslmode=disable"
 )
 
+func teardownDatabase(db *sql.DB) {
+  db.Exec(`
+    DROP TABLE IF EXISTS paragraphs;
+    DROP TABLE IF EXISTS categories;
+    DROP TABLE IF EXISTS publications;
+    DROP TABLE IF EXISTS frequencies;
+  `)
+}
+
 func setupDatabase() (Storage, error) {
   philariosDatabase := PostgresStorage{
     testDriverName, testDataSourceName}
@@ -19,16 +28,8 @@ func setupDatabase() (Storage, error) {
     return philariosDatabase, err
   }
   defer db.Close()
-
-  _, err = db.Exec(`
-    DROP TABLE IF EXISTS paragraphs;
-    DROP TABLE IF EXISTS categories;
-    DROP TABLE IF EXISTS publications;
-    DROP TABLE IF EXISTS frequencies;
-  `)
-  if err != nil {
-    return philariosDatabase, err
-  }
+  defer teardownDatabase(db)
+  teardownDatabase(db)
 
   publication := Publication{
     Title: "Great Expectations",

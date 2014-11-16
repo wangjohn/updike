@@ -4,7 +4,6 @@ import (
   "github.com/wangjohn/updike/textprocessor"
   "github.com/lib/pq"
   "database/sql"
-  "fmt"
 )
 
 type Storage interface {
@@ -44,7 +43,7 @@ CREATE TABLE IF NOT EXISTS paragraphs (
 CREATE TABLE IF NOT EXISTS frequencies (
   id bigserial PRIMARY KEY,
   word text,
-  count integer,
+  count integer
 );
 `
 
@@ -78,6 +77,10 @@ func (p PostgresStorage) QueryForWord(word string, categories []string) ([]Parag
   if err != nil {
     return nil, err
   }
+  err = p.EnsureSchema(db)
+  if err != nil {
+    return nil, err
+  }
 
   rows, err := performWordQuery(word, db)
   defer rows.Close()
@@ -104,9 +107,8 @@ func (p PostgresStorage) QueryForWord(word string, categories []string) ([]Parag
 }
 
 func performWordQuery(word string, db *sql.DB) (*sql.Rows, error) {
-  wordQuery := fmt.Sprintf(`SELECT publication, body FROM paragraphs
-    WHERE to_tsvector(body) @@ to_tsquery('%s')`, word)
-  return db.Query(wordQuery)
+  return db.Query(`SELECT publication, body FROM paragraphs
+    WHERE to_tsvector(body) @@ to_tsquery($1)`, word)
 }
 
 /*
@@ -118,7 +120,10 @@ func (p PostgresStorage) AddPublication(publication Publication) (error) {
   if err != nil {
     return err
   }
-  p.EnsureSchema(db)
+  err = p.EnsureSchema(db)
+  if err != nil {
+    return err
+  }
 
   txn, err := db.Begin()
   if err != nil {
@@ -126,10 +131,10 @@ func (p PostgresStorage) AddPublication(publication Publication) (error) {
   }
 
   var publicationId int
-  publicationQuery := fmt.Sprintf(
-    `INSERT INTO publications(
+  err = db.QueryRow(
+    `INSERT INTO publications (
         title, author, editor, date, source_url, type, encoding)
-      VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s')
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
       RETURNING id`,
     publication.Title,
     publication.Author,
@@ -137,8 +142,7 @@ func (p PostgresStorage) AddPublication(publication Publication) (error) {
     publication.Date,
     publication.SourceURL,
     publication.Type,
-    publication.Encoding)
-  err = db.QueryRow(publicationQuery).Scan(&publicationId)
+    publication.Encoding).Scan(&publicationId)
   if err != nil {
     return err
   }
