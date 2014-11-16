@@ -12,8 +12,7 @@ type Storage interface {
 }
 
 type PostgresStorage struct {
-  DriverName string
-  DataSourceName string
+  SQLDatabase *sql.DB
 }
 
 var philariosSchema = `
@@ -73,16 +72,12 @@ QueryForWord returns SQL rows of paragraphs containing the query word given as
 an argument. These are returned from the database.
 */
 func (p PostgresStorage) QueryForWord(word string, categories []string) ([]Paragraph, error) {
-  db, err := sql.Open(p.DriverName, p.DataSourceName)
-  if err != nil {
-    return nil, err
-  }
-  err = p.EnsureSchema(db)
+  err := p.EnsureSchema()
   if err != nil {
     return nil, err
   }
 
-  rows, err := performWordQuery(word, db)
+  rows, err := p.performWordQuery(word)
   defer rows.Close()
   if err != nil {
     return nil, err
@@ -106,8 +101,8 @@ func (p PostgresStorage) QueryForWord(word string, categories []string) ([]Parag
   return paragraphs, nil
 }
 
-func performWordQuery(word string, db *sql.DB) (*sql.Rows, error) {
-  return db.Query(`SELECT publication, body FROM paragraphs
+func (p PostgresStorage) performWordQuery(word string) (*sql.Rows, error) {
+  return p.SQLDatabase.Query(`SELECT publication, body FROM paragraphs
     WHERE to_tsvector(body) @@ to_tsquery($1)`, word)
 }
 
@@ -116,22 +111,18 @@ AddPublication adds a new publication to the database, adding data to the
 publications, categories, and paragraphs tables.
 */
 func (p PostgresStorage) AddPublication(publication Publication) (error) {
-  db, err := sql.Open(p.DriverName, p.DataSourceName)
-  if err != nil {
-    return err
-  }
-  err = p.EnsureSchema(db)
+  err := p.EnsureSchema()
   if err != nil {
     return err
   }
 
-  txn, err := db.Begin()
+  txn, err := p.SQLDatabase.Begin()
   if err != nil {
     return err
   }
 
   var publicationId int
-  err = db.QueryRow(
+  err = p.SQLDatabase.QueryRow(
     `INSERT INTO publications (
         title, author, editor, date, source_url, type, encoding)
       VALUES ($1, $2, $3, $4, $5, $6, $7)
@@ -188,7 +179,7 @@ func (p PostgresStorage) AddPublication(publication Publication) (error) {
 EnsureSchema is called on a database and ensures that a correct schema has been
 applied so that Queries on the database can occur.
 */
-func (p PostgresStorage) EnsureSchema(db *sql.DB) (error) {
-  _, err := db.Exec(philariosSchema)
+func (p PostgresStorage) EnsureSchema() (error) {
+  _, err := p.SQLDatabase.Exec(philariosSchema)
   return err
 }

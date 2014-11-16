@@ -20,15 +20,12 @@ func teardownDatabase(db *sql.DB) {
 }
 
 func setupDatabase() (Storage, error) {
-  philariosDatabase := PostgresStorage{
-    testDriverName, testDataSourceName}
-
   db, err := sql.Open(testDriverName, testDataSourceName)
   if err != nil {
-    return philariosDatabase, err
+    return nil, err
   }
-  defer db.Close()
-  defer teardownDatabase(db)
+
+  philariosDatabase := PostgresStorage{db}
   teardownDatabase(db)
 
   publication := Publication{
