@@ -36,6 +36,12 @@ type WordFactory struct {
   Storage storage.Storage
 }
 
+type Philarios interface {
+  SentenceFindAlternativeWords(sentence string, queryStart, queryEnd, maxWords int) ([]string, error)
+  FindAlternativeWords(beforeWords, afterWords []string, queryWord string, maxWords int) ([]string, error)
+  AlternativeWords(word string, maxWords int) ([]string, error)
+}
+
 /*
 SentenceFindAlternativeWords takes a sentence and the start and end positions
 of a query, and finds alternative words for that query. The queryStart index
