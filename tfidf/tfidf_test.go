@@ -176,7 +176,7 @@ func TestTFIDF(t *testing.T) {
   }
 
   for _, fixture := range fixtures {
-    resultScore, err := tfidf.TFIDFScore(fixture.Word, fixture.DocumentId)
+    resultScore, err := tfidf.Score(fixture.Word, fixture.DocumentId)
     if err != nil {
       t.Errorf("Should not have thrown an error for inverse document frequency: err=%v", err)
     }
@@ -254,7 +254,7 @@ func TestStoreWord(t *testing.T) {
     }
 
     // Check the TFIDF score
-    score, err := tfidf.TFIDFScore(f.Word, f.DocumentId)
+    score, err := tfidf.Score(f.Word, f.DocumentId)
     if err != nil {
       t.Errorf("Obtained an error while trying to get TFIDF score: err=%v", err)
     }

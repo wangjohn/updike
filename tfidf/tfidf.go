@@ -13,7 +13,7 @@ type TFIDF interface {
   Store(word string, occurrences, docMaxWordOccurrences, documentId int) (error)
   TermFrequency(word string, documentId int) (float64, error)
   InverseDocumentFrequency(word string) (float64, error)
-  TFIDFScore(word string, documentId int) (float64, error)
+  Score(word string, documentId int) (float64, error)
   NormalizeWord(word string) (string, error)
 }
 
@@ -113,7 +113,7 @@ func idfFunc(docs, totDocs int) (float64) {
   return math.Log10(float64(totDocs) / (1.0 + float64(docs)))
 }
 
-func (p PersistentTFIDF) TFIDFScore(word string, documentId int) (float64, error) {
+func (p PersistentTFIDF) Score(word string, documentId int) (float64, error) {
   word, err := p.NormalizeWord(word)
   if err != nil {
     return 0.0, err
