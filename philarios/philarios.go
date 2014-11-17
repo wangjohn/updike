@@ -33,6 +33,8 @@ func (t WordVectorCollection) Swap(i, j int) {
 
 type WordFactory struct {
   Storage Storage
+  Settings Settings
+  TFIDF TFIDF
 }
 
 type Philarios interface {
@@ -67,8 +69,30 @@ words after are given by afterWords.
 func (p WordFactory) FindAlternativeWords(beforeWords, afterWords []string, queryWord string, maxWords int) ([]string, error) {
   alternativeWords := make([]string, 0)
 
-  // TODO: implement me
+  beforeWords = p.findImportantWords(beforeWords)
+  afterWords = p.findImportantWords(afterWords)
+
+  // TODO: figure out how we want to include categories. This is a stop gap.
+  categories := []string{}
+
+  for _, beforeWord := range beforeWords {
+    paragraphs, err = p.Storage.QueryForWord(queryWord, categories)
+    for _, paragraph := range paragraphs {
+      lookForWords(paragraph.Body, p.Settings.WordsToCapture, false)
+    }
+  }
+
+  for _, afterWord := range afterWords {
+
+  }
+
   return alternativeWords, nil
+}
+
+func (p WordFactory) findImportantWords(words []string) ([]string) {
+  // TODO: for now, returning all words. In the future, we probably want to filter
+  // by words with high aggregate TFIDF scores.
+  return words
 }
 
 /*
