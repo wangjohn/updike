@@ -32,7 +32,7 @@ func (t WordVectorCollection) Swap(i, j int) {
 }
 
 type WordFactory struct {
-  Storage storage.Storage
+  Storage Storage
 }
 
 type Philarios interface {
