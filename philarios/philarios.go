@@ -3,7 +3,6 @@ package philarios
 import (
   "regexp"
   "github.com/wangjohn/quickselect"
-  "github.com/wangjohn/updike/storage"
 
   "fmt"
   "strings"
