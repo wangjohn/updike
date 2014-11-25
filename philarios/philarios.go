@@ -173,7 +173,7 @@ func (p WordFactory) TargetVectors(word string) ([]WordVector, error) {
   }
 
   for _, paragraph := range paragraphs {
-    newVectors, err := paragraphTargetVectors(paragraph.Body, word)
+    newVectors, err := associatedWordVectors(paragraph.Body, word)
     if err != nil {
       return wordVectors, err
     }
@@ -183,68 +183,17 @@ func (p WordFactory) TargetVectors(word string) ([]WordVector, error) {
   return wordVectors, nil
 }
 
-func paragraphTargetVectors(paragraph, word string) ([]WordVector, error) {
+func associatedWordVectors(paragraph, word string) ([]WordVector, error) {
   wordVectors := make([]WordVector, 0)
 
-  words := SplitWords(paragraph)
-  for i, word := range words {
-
-  }
-
-  regexString := fmt.Sprintf(`[\s[[:punct:]]]*%s[\s[[:punct:]]]*`, word)
-  compiledRegex, err := regexp.Compile(regexString)
-  if err != nil {
-    return wordVectors, err
-  }
-
-  allIndices := compiledRegex.FindAllStringIndex(paragraph, -1)
-  var potentialWords []string
-  var currentVector WordVector
-
-  if allIndices != nil {
-    for i := 0; i < len(allIndices); i++ {
-      matchedIndexPair := allIndices[i]
-      start, end := matchedIndexPair[0], matchedIndexPair[1]
-
-      potentialWords = lookForWords(paragraph[:start], NumSurroundingWords, false)
-      if len(potentialWords) > 0 {
-        for _, word := range potentialWords {
-          currentVector = WordVector{word, 1.0}
-          wordVectors = append(wordVectors, currentVector)
-        }
-      }
-
-      potentialWords = lookForWords(paragraph[end:], NumSurroundingWords, true)
-      if len(potentialWords) > 0 {
-        for _, word := range potentialWords {
-          currentVector = WordVector{word, 1.0}
-          wordVectors = append(wordVectors, currentVector)
-        }
-      }
+  paragraphWords := SplitWords(paragraph)
+  for i, pw := range paragraphWords {
+    if pw == word {
+      wordVectors = append(wordVectors, WordVector{pw, 1.0})
     }
   }
 
   return wordVectors, nil
-}
-
-func lookForWords(paragraph string, wordsToCapture int, atBeginning bool) ([]string) {
-  if strings.Trim(paragraph, " ") == "" {
-    return []string{}
-  }
-
-  words := SplitWords(paragraph)
-  var index int
-  if len(words) > wordsToCapture {
-    index = wordsToCapture
-  } else {
-    index = len(words)
-  }
-
-  if atBeginning {
-    return words[:index]
-  } else {
-    return words[(len(words)-index):]
-  }
 }
 
 func Synonyms(word string) ([]string, error) {
