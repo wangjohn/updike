@@ -2,7 +2,6 @@ package philarios
 
 import (
   "database/sql"
-  "reflect"
   "testing"
 
   "github.com/wangjohn/updike/tfidf"

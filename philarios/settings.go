@@ -5,7 +5,7 @@ type Settings struct {
 }
 
 const (
-  WordsToCapture = 4
+  WordsToCapture = 2
 )
 
 func DefaultSettingsObject() (Settings) {

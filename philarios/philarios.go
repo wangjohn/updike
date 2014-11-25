@@ -1,12 +1,8 @@
 package philarios
 
 import (
-  "regexp"
   "github.com/wangjohn/quickselect"
   "github.com/wangjohn/updike/tfidf"
-
-  "fmt"
-  "strings"
 )
 
 const (
@@ -77,14 +73,11 @@ func (p WordFactory) FindAlternativeWords(beforeWords, afterWords []string, quer
   categories := []string{}
 
   for _, beforeWord := range beforeWords {
-    paragraphs, err := p.Storage.QueryForWord(beforeWord, categories)
+    _, err := p.Storage.QueryForWord(beforeWord, categories)
     if err != nil {
       return alternativeWords, err
     }
 
-    for _, paragraph := range paragraphs {
-      lookForWords(paragraph.Body, p.Settings.WordsToCapture, false)
-    }
   }
 
   // TODO: do after words.
@@ -173,7 +166,7 @@ func (p WordFactory) TargetVectors(word string) ([]WordVector, error) {
   }
 
   for _, paragraph := range paragraphs {
-    newVectors, err := associatedWordVectors(paragraph.Body, word)
+    newVectors, err := p.associatedWordVectors(paragraph.Body, word)
     if err != nil {
       return wordVectors, err
     }
@@ -183,17 +176,46 @@ func (p WordFactory) TargetVectors(word string) ([]WordVector, error) {
   return wordVectors, nil
 }
 
-func associatedWordVectors(paragraph, word string) ([]WordVector, error) {
+func (p WordFactory) associatedWordVectors(paragraph, word string) ([]WordVector, error) {
   wordVectors := make([]WordVector, 0)
 
   paragraphWords := SplitWords(paragraph)
   for i, pw := range paragraphWords {
     if pw == word {
-      wordVectors = append(wordVectors, WordVector{pw, 1.0})
+      for _, surroundingWord := range p.surroundingWords(paragraphWords, i) {
+        wordVectors = append(wordVectors, WordVector{surroundingWord, 1.0})
+      }
     }
   }
 
   return wordVectors, nil
+}
+
+func (p WordFactory) surroundingWords(words []string, wordIndex int) ([]string) {
+  var start, end int
+  if wordIndex > p.Settings.WordsToCapture {
+    start = wordIndex - p.Settings.WordsToCapture
+  } else {
+    start = 0
+  }
+
+  if p.Settings.WordsToCapture + wordIndex < len(words) {
+    end = wordIndex + p.Settings.WordsToCapture
+  } else {
+    end = len(words)
+  }
+
+  surrounding := make([]string, start - end - 1)
+
+  j := 0
+  for i := start; i < end; i++ {
+    if i != wordIndex {
+      surrounding[j] = words[i]
+      j++
+    }
+  }
+
+  return surrounding
 }
 
 func Synonyms(word string) ([]string, error) {
