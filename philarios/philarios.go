@@ -177,15 +177,23 @@ func (p WordFactory) TargetVectors(word string) ([]WordVector, error) {
 }
 
 func (p WordFactory) associatedWordVectors(paragraph, word string) ([]WordVector, error) {
-  wordVectors := make([]WordVector, 0)
+  wordCounts := make(map[string]int)
 
   paragraphWords := SplitWords(paragraph)
   for i, pw := range paragraphWords {
     if FuzzyStringEquals(pw, word) {
       for _, surroundingWord := range p.surroundingWords(paragraphWords, i) {
-        wordVectors = append(wordVectors, WordVector{surroundingWord, 1.0})
+        wordCounts[surroundingWord] += 1
       }
     }
+  }
+
+  // TODO: calculate probabilities here.
+  wordVectors := make([]WordVector, len(wordCounts))
+  i := 0
+  for key := range wordCounts {
+    wordVectors[i] = WordVector{key, float64(wordCounts[key])}
+    i++
   }
 
   return wordVectors, nil
