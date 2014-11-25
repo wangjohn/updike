@@ -16,3 +16,9 @@ func SplitWords(sentence string) ([]string) {
   }
   return strings.FieldsFunc(sentence, f)
 }
+
+func FuzzyStringEquals(word1, word2 string) (bool) {
+  w1 := strings.TrimSpace(strings.ToLower(word1))
+  w2 := strings.TrimSpace(strings.ToLower(word1))
+  return w1 == w2
+}

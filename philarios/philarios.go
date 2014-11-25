@@ -181,7 +181,7 @@ func (p WordFactory) associatedWordVectors(paragraph, word string) ([]WordVector
 
   paragraphWords := SplitWords(paragraph)
   for i, pw := range paragraphWords {
-    if pw == word {
+    if FuzzyStringEquals(pw, word) {
       for _, surroundingWord := range p.surroundingWords(paragraphWords, i) {
         wordVectors = append(wordVectors, WordVector{surroundingWord, 1.0})
       }
@@ -205,7 +205,7 @@ func (p WordFactory) surroundingWords(words []string, wordIndex int) ([]string) 
     end = len(words)
   }
 
-  surrounding := make([]string, start - end - 1)
+  surrounding := make([]string, end - start - 1)
 
   j := 0
   for i := start; i < end; i++ {
