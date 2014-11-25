@@ -3,6 +3,7 @@ package philarios
 import (
   "regexp"
   "github.com/wangjohn/quickselect"
+  "github.com/wangjohn/updike/tfidf"
 
   "fmt"
   "strings"
@@ -34,7 +35,7 @@ func (t WordVectorCollection) Swap(i, j int) {
 type WordFactory struct {
   Storage Storage
   Settings Settings
-  TFIDF TFIDF
+  TFIDF tfidf.TFIDF
 }
 
 type Philarios interface {
@@ -76,15 +77,17 @@ func (p WordFactory) FindAlternativeWords(beforeWords, afterWords []string, quer
   categories := []string{}
 
   for _, beforeWord := range beforeWords {
-    paragraphs, err = p.Storage.QueryForWord(queryWord, categories)
+    paragraphs, err := p.Storage.QueryForWord(beforeWord, categories)
+    if err != nil {
+      return alternativeWords, err
+    }
+
     for _, paragraph := range paragraphs {
       lookForWords(paragraph.Body, p.Settings.WordsToCapture, false)
     }
   }
 
-  for _, afterWord := range afterWords {
-
-  }
+  // TODO: do after words.
 
   return alternativeWords, nil
 }
@@ -182,6 +185,11 @@ func (p WordFactory) TargetVectors(word string) ([]WordVector, error) {
 
 func paragraphTargetVectors(paragraph, word string) ([]WordVector, error) {
   wordVectors := make([]WordVector, 0)
+
+  words := SplitWords(paragraph)
+  for i, word := range words {
+
+  }
 
   regexString := fmt.Sprintf(`[\s[[:punct:]]]*%s[\s[[:punct:]]]*`, word)
   compiledRegex, err := regexp.Compile(regexString)
