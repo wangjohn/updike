@@ -3,6 +3,8 @@ package philarios
 import (
   "github.com/wangjohn/quickselect"
   "github.com/wangjohn/updike/tfidf"
+
+  "fmt"
 )
 
 const (
@@ -165,34 +167,46 @@ func (p WordFactory) TargetVectors(word string) ([]WordVector, error) {
     return wordVectors, err
   }
 
+  // TODO: More probabilistic way of getting word vectors than just adding up
+  // the scores.
+  scoreCollection := make(map[string]float64)
   for _, paragraph := range paragraphs {
     newVectors, err := p.associatedWordVectors(paragraph.Body, word)
     if err != nil {
       return wordVectors, err
     }
-    wordVectors = append(wordVectors, newVectors...)
+
+    for _, vec := range newVectors {
+      scoreCollection[vec.Word] += vec.Score
+    }
   }
 
+  for key, value := range scoreCollection {
+    wordVectors = append(wordVectors, WordVector{key, value})
+  }
   return wordVectors, nil
 }
 
 func (p WordFactory) associatedWordVectors(paragraph, word string) ([]WordVector, error) {
-  wordCounts := make(map[string]int)
+  associatedCounts := make(map[string]int)
 
   paragraphWords := SplitWords(paragraph)
+  wordOccurrences := 0
   for i, pw := range paragraphWords {
     if FuzzyStringEquals(pw, word) {
       for _, surroundingWord := range p.surroundingWords(paragraphWords, i) {
-        wordCounts[surroundingWord] += 1
+        canonicalSW := CanonicalWordForm(surroundingWord)
+        associatedCounts[canonicalSW]++
       }
+      wordOccurrences++
     }
   }
 
-  // TODO: calculate probabilities here.
-  wordVectors := make([]WordVector, len(wordCounts))
+  wordVectors := make([]WordVector, len(associatedCounts))
   i := 0
-  for key := range wordCounts {
-    wordVectors[i] = WordVector{key, float64(wordCounts[key])}
+  for key, value := range associatedCounts {
+    occurrenceProb := float64(value) / float64(wordOccurrences)
+    wordVectors[i] = WordVector{key, occurrenceProb}
     i++
   }
 

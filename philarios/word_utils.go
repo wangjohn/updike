@@ -18,7 +18,11 @@ func SplitWords(sentence string) ([]string) {
 }
 
 func FuzzyStringEquals(word1, word2 string) (bool) {
-  w1 := strings.TrimSpace(strings.ToLower(word1))
-  w2 := strings.TrimSpace(strings.ToLower(word1))
+  w1 := CanonicalWordForm(word1)
+  w2 := CanonicalWordForm(word2)
   return w1 == w2
+}
+
+func CanonicalWordForm(word string) (string) {
+  return strings.TrimSpace(strings.ToLower(word))
 }
