@@ -3,8 +3,6 @@ package philarios
 import (
   "github.com/wangjohn/quickselect"
   "github.com/wangjohn/updike/tfidf"
-
-  "fmt"
 )
 
 const (
@@ -160,34 +158,33 @@ func synonymScore(score float64) (float64) {
 }
 
 func (p WordFactory) TargetVectors(word string) ([]WordVector, error) {
-  var wordVectors []WordVector
-
   paragraphs, err := p.Storage.QueryForWord(word, nil)
   if err != nil {
-    return wordVectors, err
+    return nil, err
   }
 
-  // TODO: More probabilistic way of getting word vectors than just adding up
-  // the scores.
   scoreCollection := make(map[string]float64)
   for _, paragraph := range paragraphs {
-    newVectors, err := p.associatedWordVectors(paragraph.Body, word)
+    probWordVectors, err := p.associatedWordProbabilities(paragraph.Body, word)
     if err != nil {
-      return wordVectors, err
+      return nil, err
     }
 
-    for _, vec := range newVectors {
-      scoreCollection[vec.Word] += vec.Score
+    for _, vec := range probWordVectors {
+      scoreCollection[vec.Word] += (vec.Score / float64(len(paragraphs)))
     }
   }
 
+  var wordVectors = make([]WordVector, len(scoreCollection))
+  i := 0
   for key, value := range scoreCollection {
-    wordVectors = append(wordVectors, WordVector{key, value})
+    wordVectors[i] = WordVector{key, value}
+    i++
   }
   return wordVectors, nil
 }
 
-func (p WordFactory) associatedWordVectors(paragraph, word string) ([]WordVector, error) {
+func (p WordFactory) associatedWordProbabilities(paragraph, word string) ([]WordVector, error) {
   associatedCounts := make(map[string]int)
 
   paragraphWords := SplitWords(paragraph)
