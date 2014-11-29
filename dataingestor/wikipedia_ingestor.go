@@ -1,11 +1,8 @@
 package dataingestor
 
 import (
-  "strings"
   "fmt"
   "os"
-  "bufio"
-  "regexp"
   "encoding/xml"
 
   "github.com/wangjohn/updike/philarios"
@@ -26,52 +23,42 @@ func (d DataIngestor) IngestWikipedia(filename string) (error) {
   }
   defer f.Close()
 
-  scanner := bufio.NewScanner(f)
-  scanner.Split(bufio.ScanLines)
+  decoder := xml.NewDecoder(f)
+  for {
+    t, err := decoder.Token()
+    if err != nil {
+      return err
+    }
+    if t == nil {
+      break
+    }
 
-  pageBegin, err := regexp.Compile("<page>")
-  if err != nil {
-    return err
-  }
-
-  pageEnd, err := regexp.Compile("</page>")
-  if err != nil {
-    return err
-  }
-
-  var onPage bool
-  currentPage := make([]string, 0)
-  for scanner.Scan() {
-    text := scanner.Text()
-    if onPage {
-      currentPage = append(currentPage, text)
-
-      if pageEnd.MatchString(text) {
-        onPage = false
-        d.ingestWikipediaPage(strings.Join(currentPage, ""))
-        break
+    switch se := t.(type) {
+    case xml.StartElement:
+      if se.Name.Local == "page" {
+        var p wikipediaPage
+        decoder.DecodeElement(&p, &se)
+        d.ingestWikipediaPage(p)
+        return nil
       }
-    } else if pageBegin.MatchString(text) {
-      currentPage = make([]string, 1)
-      currentPage[0] = text
-      onPage = true
     }
   }
 
   return nil
 }
 
-type wikipediaStruct struct {
-  Title string `xml:"title,attr"`
-  ID int `xml:"id,attr"`
+type wikipediaPage struct {
+  Title string `xml:"title"`
+  ID int `xml:"id"`
+  Revision wikipediaRevision `xml:"revision"`
 }
 
-func (d DataIngestor) ingestWikipediaPage(page string) (error) {
-  fmt.Println(page)
-  stringReader := strings.NewReader(page)
-  decoder := xml.NewDecoder(stringReader)
+type wikipediaRevision struct {
+  Text string `xml:"text"`
+}
 
-  fmt.Println(decoder.Decode(wikipediaStruct))
+func (d DataIngestor) ingestWikipediaPage(page wikipediaPage) (error) {
+  fmt.Println(page.Revision.Text)
 
   return nil
 }
