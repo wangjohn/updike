@@ -3,6 +3,7 @@ package dataingestor
 import (
   "fmt"
   "os"
+  "regexp"
   "encoding/xml"
 
   "github.com/wangjohn/updike/philarios"
@@ -24,6 +25,7 @@ func (d DataIngestor) IngestWikipedia(filename string) (error) {
   defer f.Close()
 
   decoder := xml.NewDecoder(f)
+  pagesIngested := 0
   for {
     t, err := decoder.Token()
     if err != nil {
@@ -39,8 +41,12 @@ func (d DataIngestor) IngestWikipedia(filename string) (error) {
         var p wikipediaPage
         decoder.DecodeElement(&p, &se)
         d.ingestWikipediaPage(p)
-        return nil
+        pagesIngested++
       }
+    }
+
+    if pagesIngested == 2 {
+      return nil
     }
   }
 
@@ -58,7 +64,12 @@ type wikipediaRevision struct {
 }
 
 func (d DataIngestor) ingestWikipediaPage(page wikipediaPage) (error) {
-  fmt.Println(page.Revision.Text)
+  reg, err := regexp.Compile("({{.*}}|\\[\\[.*\\|.*\\]\\])")
+  if err != nil {
+    return err
+  }
+
+  fmt.Println(reg.ReplaceAllString(page.Revision.Text, ""))
 
   return nil
 }
