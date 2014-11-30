@@ -59,8 +59,28 @@ type wikipediaPage struct {
   Revision wikipediaRevision `xml:"revision"`
 }
 
+func (w wikipediaPage) SourceURL() (string) {
+  reg, _ := regexp.Compile("[[:space:]]")
+  underscored := reg.ReplaceAllString(w.Title, "_")
+  return "en.wikipedia.org/" + underscored
+}
+
+func (w wikipediaRevision) Date() (string) {
+  reg, _ := regexp.Compile("[[:digit:]]{4}-[[:digit:]]{2}-[[:digit:]]{2}")
+  return reg.FindString(w.Timestamp)
+}
+
 type wikipediaRevision struct {
+  ID int `xml:"id"`
+  Timestamp string `xml:"timestamp"`
+  Contributor wikipediaContributor `xml:"contributor"`
   Text string `xml:"text"`
+  Format string `xml:"format"`
+}
+
+type wikipediaContributor struct {
+  Username string `xml:"username"`
+  ID int `xml:"id"`
 }
 
 func (d DataIngestor) ingestWikipediaPage(page wikipediaPage) (error) {
@@ -69,7 +89,21 @@ func (d DataIngestor) ingestWikipediaPage(page wikipediaPage) (error) {
     return err
   }
 
-  fmt.Println(reg.ReplaceAllString(page.Revision.Text, ""))
+  body := reg.ReplaceAllString(page.Revision.Text, "")
+  pub := philarios.Publication{
+    Title: page.Title,
+    Author: "wikipedia",
+    Editor: "",
+    Date: page.Revision.Date(),
+    SourceID: page.ID,
+    SourceURL: page.SourceURL(),
+    Encoding: "utf-8",
+    Type: "wikipedia_article",
+    Categories: []string{},
+    Text: body,
+  }
+  fmt.Println(pub)
 
   return nil
 }
+

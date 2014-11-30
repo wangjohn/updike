@@ -22,6 +22,7 @@ CREATE TABLE IF NOT EXISTS publications (
   author text,
   editor text,
   date date,
+  source_id text,
   source_url text,
   encoding text,
   type text
@@ -55,6 +56,7 @@ type Publication struct {
   Author string
   Editor string
   Date string
+  SourceID string
   SourceURL string
   Encoding string
   Type string
@@ -124,13 +126,14 @@ func (p PostgresStorage) AddPublication(publication Publication) (error) {
   var publicationId int
   err = p.SQLDatabase.QueryRow(
     `INSERT INTO publications (
-        title, author, editor, date, source_url, type, encoding)
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
+        title, author, editor, date, source_id, source_url, type, encoding)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
       RETURNING id`,
     publication.Title,
     publication.Author,
     publication.Editor,
     publication.Date,
+    publication.SourceID,
     publication.SourceURL,
     publication.Type,
     publication.Encoding).Scan(&publicationId)
