@@ -1,7 +1,6 @@
 package dataingestor
 
 import (
-  "fmt"
   "os"
   "regexp"
   "encoding/xml"
@@ -55,7 +54,7 @@ func (d DataIngestor) IngestWikipedia(filename string) (error) {
 
 type wikipediaPage struct {
   Title string `xml:"title"`
-  ID int `xml:"id"`
+  ID string `xml:"id"`
   Revision wikipediaRevision `xml:"revision"`
 }
 
@@ -71,7 +70,7 @@ func (w wikipediaRevision) Date() (string) {
 }
 
 type wikipediaRevision struct {
-  ID int `xml:"id"`
+  ID string `xml:"id"`
   Timestamp string `xml:"timestamp"`
   Contributor wikipediaContributor `xml:"contributor"`
   Text string `xml:"text"`
@@ -80,7 +79,7 @@ type wikipediaRevision struct {
 
 type wikipediaContributor struct {
   Username string `xml:"username"`
-  ID int `xml:"id"`
+  ID string `xml:"id"`
 }
 
 func (d DataIngestor) ingestWikipediaPage(page wikipediaPage) (error) {
@@ -102,8 +101,7 @@ func (d DataIngestor) ingestWikipediaPage(page wikipediaPage) (error) {
     Categories: []string{},
     Text: body,
   }
-  fmt.Println(pub)
 
-  return nil
+  return d.Storage.AddPublication(pub)
 }
 
