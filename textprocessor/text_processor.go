@@ -44,7 +44,7 @@ func ProcessParagraphs(text string) ([]string, error) {
     return paragraphs, err
   }
 
-  preprocessedParagraphs := strings.Split(preprocessedText, "\n")
+  preprocessedParagraphs := []string{preprocessedText}
   var postprocessedParagraph string
   for _, preprocessedParagraph := range preprocessedParagraphs {
     postprocessedParagraph, err = postprocessParagraph(preprocessedParagraph)
