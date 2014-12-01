@@ -19,7 +19,7 @@ func main() {
   wordFactory, _ := createWordFactory()
 
   ingestor := dataingestor.DataIngestor{wordFactory.Storage}
-  ingestor.IngestWikipedia("/home/wangjohn/wikipedia/enwiki-test-pages-articles.xml")
+  ingestor.IngestWikipedia("/home/wangjohn/wikipedia/enwiki-latest-pages-articles.xml")
 }
 
 func createWordFactory() (*philarios.WordFactory, error) {

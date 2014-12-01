@@ -4,6 +4,7 @@ import (
   "os"
   "regexp"
   "encoding/xml"
+  "fmt"
 
   "github.com/wangjohn/updike/philarios"
 )
@@ -41,11 +42,11 @@ func (d DataIngestor) IngestWikipedia(filename string) (error) {
         decoder.DecodeElement(&p, &se)
         d.ingestWikipediaPage(p)
         pagesIngested++
-      }
-    }
 
-    if pagesIngested == 2 {
-      return nil
+        if pagesIngested % 100 == 0 {
+          fmt.Printf("Pages ingested: %v\n", pagesIngested)
+        }
+      }
     }
   }
 

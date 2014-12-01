@@ -39,12 +39,6 @@ CREATE TABLE IF NOT EXISTS paragraphs (
   publication integer REFERENCES publications (id),
   body text
 );
-
-CREATE TABLE IF NOT EXISTS frequencies (
-  id bigserial PRIMARY KEY,
-  word text,
-  count integer
-);
 `
 
 /*
@@ -118,12 +112,21 @@ func (p PostgresStorage) AddPublication(publication Publication) (error) {
     return err
   }
 
+  var publicationId int
+  err = p.SQLDatabase.QueryRow(`SELECT id FROM publications WHERE source_id=$1`,
+    publication.SourceID).Scan(&publicationId)
+  if err == nil {
+    // We expect a sql.ErrNoRows error to occur (since we don't duplicate source_ids)
+    return nil
+  } else if err != nil && err != sql.ErrNoRows {
+    return err
+  }
+
   txn, err := p.SQLDatabase.Begin()
   if err != nil {
     return err
   }
 
-  var publicationId int
   err = p.SQLDatabase.QueryRow(
     `INSERT INTO publications (
         title, author, editor, date, source_id, source_url, type, encoding)
